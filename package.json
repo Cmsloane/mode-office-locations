@@ -1,0 +1,9 @@
+{
+  "name": "mode-office-locations",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MODE Global interactive office map with carrier engagement analytics",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
