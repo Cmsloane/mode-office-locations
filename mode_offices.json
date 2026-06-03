@@ -1,0 +1,3364 @@
+{
+  "meta": {
+    "title": "MODE Global — Office Locations",
+    "version": "2.0",
+    "description": "Geocoded master directory of MODE / MODE Transportation offices, prepared for programmatic use, deployment, and handoff.",
+    "source_file": "TableExport.csv (MODE master office locations export)",
+    "generated_utc": "2026-06-03T10:59:33Z",
+    "record_count": 146,
+    "coordinate_system": "WGS84 (EPSG:4326), decimal degrees",
+    "geocoding": {
+      "primary_provider": "US Census Geocoder (Public_AR_Current benchmark)",
+      "fallback_provider": "pgeocode ZIP-code centroid (US/CA)",
+      "notes": "Records with geocode_method='zip_centroid' are at the ZIP centroid, not the exact street address. geocode_approximate=true flags these."
+    },
+    "boundary_data": {
+      "us_states": "US Census via us-atlas@3 states-10m (1:10,000,000 TopoJSON, high resolution)",
+      "canada_provinces": "click_that_hood Canada GeoJSON, reduced to ~3-decimal (~110 m) precision",
+      "rendering": "D3 geoMercator fitted to the contiguous US; Great Lakes render as water gaps between state polygons; national border drawn from a TopoJSON mesh."
+    },
+    "known_omissions": "Several malformed source-CSV rows (unquoted commas in the City field) could not be cleanly parsed and are excluded — notably a Ryan Hizey / 'NY OFFIC' record in Acton, MA. Fix the export and re-ingest to recover them."
+  },
+  "schema": {
+    "office_name": "string — descriptive office label from source 'City' column",
+    "global_id": "string — MODE GlobalId / internal office code",
+    "address": "string — street address line 1",
+    "city": "string",
+    "state": "string — 2-letter US state or CA province code",
+    "zip": "string — postal code",
+    "phone": "string",
+    "email": "string",
+    "contacts": "array of strings — named contacts",
+    "services_raw": "string — original semicolon-delimited services text",
+    "service_modes": "array — normalized subset of [LTL, TL, IM, Air, Ocean, Parcel, Warehousing]",
+    "latitude": "number",
+    "longitude": "number",
+    "geocode_method": "string — 'street' or 'zip_centroid'",
+    "geocode_approximate": "boolean"
+  },
+  "derived": {
+    "offices_by_state": {
+      "AL": 4,
+      "AR": 1,
+      "AZ": 5,
+      "CA": 9,
+      "CO": 2,
+      "FL": 15,
+      "GA": 6,
+      "IA": 2,
+      "ID": 2,
+      "IL": 5,
+      "IN": 3,
+      "KS": 1,
+      "LA": 2,
+      "MA": 2,
+      "MD": 1,
+      "ME": 1,
+      "MI": 4,
+      "MN": 2,
+      "MO": 3,
+      "MS": 3,
+      "NC": 4,
+      "NJ": 3,
+      "NV": 2,
+      "NY": 1,
+      "OH": 3,
+      "OK": 1,
+      "ON": 4,
+      "OR": 1,
+      "PA": 6,
+      "SC": 5,
+      "TN": 7,
+      "TX": 26,
+      "UT": 1,
+      "VA": 1,
+      "WA": 7,
+      "WI": 1
+    },
+    "offices_by_service_mode": {
+      "TL": 113,
+      "LTL": 75,
+      "IM": 49,
+      "Warehousing": 37,
+      "Air": 8,
+      "Ocean": 8,
+      "Parcel": 1
+    },
+    "approximate_location_count": 14
+  },
+  "handoff": {
+    "purpose": "Hand off to Claude Code to host/deploy the map and own future data updates.",
+    "main_file": "index.html — the current production map (high-resolution vector boundaries, mobile-friendly, fully self-contained, offline-capable). THIS is the file to deploy.",
+    "artifacts_already_built": [
+      "index.html (a.k.a. MODE_Office_Map_HiRes.html) — MAIN FILE. D3 + embedded high-res US/Canada boundaries + embedded office data. Mobile layout stacks map over a scrollable list so both show at once on iPhone. No runtime network deps except the per-office Google Maps Directions link.",
+      "MODE_Office_Finder.html — earlier online version using Leaflet + map tiles (richer street basemap, needs internet). Optional alternate.",
+      "MODE_Office_Locations_OFFLINE.html — earlier offline build, superseded by index.html.",
+      "CE_Team_Office_Assignments.xlsx — team-assignment reference workbook (separate deliverable)."
+    ],
+    "suggested_next_steps": [
+      "Deploy index.html to Netlify as the site root (see DEPLOY_TO_NETLIFY.md).",
+      "Wire index.html to read this mode_offices.json at build time so data lives in one place (it is currently embedded inline).",
+      "Add an ingestion script: re-parse the source CSV, re-geocode only new/changed rows, regenerate this JSON, then re-inject into index.html.",
+      "Fix the malformed source rows (see meta.known_omissions) to recover excluded offices.",
+      "Optional: correct coordinates for the ZIP-centroid records flagged below."
+    ],
+    "field_to_map_key_mapping": {
+      "note": "index.html uses short keys internally; map JSON fields when wiring.",
+      "office_name": "n",
+      "global_id": "id",
+      "address": "a",
+      "city": "c",
+      "state": "s",
+      "zip": "z",
+      "phone": "p",
+      "email": "e",
+      "contacts(joined '; ')": "k",
+      "services_raw": "sv",
+      "service_modes": "m",
+      "latitude": "lat",
+      "longitude": "lon",
+      "geocode_method('zip'=approx)": "g"
+    },
+    "data_quality_flags": [
+      "Verify Sean Hizey vs Ryan Hizey (same office/last name, different first name).",
+      "Coraopolis, Sotx, and Corp Sales resolved to one office (PA-KU319) — confirm distinct vs duplicate.",
+      "14 offices are positioned by ZIP centroid (geocode_approximate=true)."
+    ]
+  },
+  "offices": [
+    {
+      "office_name": "AL - Hoff (AL-HO923)",
+      "global_id": "923; 366",
+      "address": "240 River Hills Business Park",
+      "city": "Birmingham",
+      "state": "AL",
+      "zip": "35242",
+      "phone": "205-991-9733",
+      "email": "stephen.hoff@modetransportation.com",
+      "contacts": [
+        "Stephen Hoff"
+      ],
+      "services_raw": "IM; TL; Warehousing: Cross Border",
+      "service_modes": [
+        "TL",
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 33.425235,
+      "longitude": -86.703086,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "AL - Perez (AL-PE663)",
+      "global_id": "663",
+      "address": "2015 King Stables Road",
+      "city": "Birmingham",
+      "state": "AL",
+      "zip": "35242",
+      "phone": "888-226-9233",
+      "email": "rafael.perez@modetransportation.com",
+      "contacts": [
+        "Rafael Perez"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 33.426532,
+      "longitude": -86.655046,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "AL - Moore (AL-DM)",
+      "global_id": "AL-DM",
+      "address": "139 County Road 631",
+      "city": "Heflin",
+      "state": "AL",
+      "zip": "36264",
+      "phone": "256-748-3334",
+      "email": "dion@suntecktts.com",
+      "contacts": [
+        "Dion Moore"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 33.58472,
+      "longitude": -85.392832,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "AL - Brady (AL-BA)",
+      "global_id": "AL-BA;ALBA-M;TN-BA",
+      "address": "741 South Hillcrest Road",
+      "city": "Odenville",
+      "state": "AL",
+      "zip": "35120",
+      "phone": "205-277-6513",
+      "email": "blake.brady@suntecktts.com",
+      "contacts": [
+        "Blake Brady"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 33.674536,
+      "longitude": -86.473289,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "AR - Gee (AR-GE104)",
+      "global_id": "104",
+      "address": "400 W Capitol Ave Ste 1700",
+      "city": "Little Rock",
+      "state": "AR",
+      "zip": "72201",
+      "phone": "501-413-2080",
+      "email": "luke.gee@modetransportation.com",
+      "contacts": [
+        "Luke Gee"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 34.744704,
+      "longitude": -92.274728,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "AZ - Estis (AZ-ES194)",
+      "global_id": "194",
+      "address": "4889 Saddle Way",
+      "city": "Pine",
+      "state": "AZ",
+      "zip": "85544",
+      "phone": "928-468-7001",
+      "email": "jeff.estis@modetransportation.com",
+      "contacts": [
+        "Jeff Estis"
+      ],
+      "services_raw": "Air; Ocean",
+      "service_modes": [
+        "Air",
+        "Ocean"
+      ],
+      "latitude": 34.403613,
+      "longitude": -111.457532,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "AZ - Ponce (AZ-PO505)",
+      "global_id": "505",
+      "address": "1575 Plaza West Drive Ste D",
+      "city": "Prescott",
+      "state": "AZ",
+      "zip": "86303",
+      "phone": "951-440-2373",
+      "email": "karolyn.ponce@modetransportation.com",
+      "contacts": [
+        "Karolyn Ponce"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 34.4958,
+      "longitude": -112.3783,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "AZ - Rivera (AZ-RI108)",
+      "global_id": "108",
+      "address": "6560 East Bay Point Way",
+      "city": "Prescott Valley",
+      "state": "AZ",
+      "zip": "86314",
+      "phone": "928-350-8433",
+      "email": "tamara.suesue@modetransportation.com",
+      "contacts": [
+        "Tamara Suesue"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 34.616016,
+      "longitude": -112.349815,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "AZ - Voce (CA-VO468)",
+      "global_id": "468",
+      "address": "27975 N Quintana Pl",
+      "city": "Queen Creek",
+      "state": "AZ",
+      "zip": "85142",
+      "phone": "951-200-5999",
+      "email": "paul.voce@modetransportation.com",
+      "contacts": [
+        "Paul Voce"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 33.135333,
+      "longitude": -111.578987,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "AZ - Newsome (AZ-TUA)",
+      "global_id": "AZ-TUA",
+      "address": "5150 W Placita Del Herrero",
+      "city": "Tucson",
+      "state": "AZ",
+      "zip": "85745",
+      "phone": "520-260-4585",
+      "email": "david.newsome@suntecktts.com",
+      "contacts": [
+        "Dave Newsome"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 32.2434,
+      "longitude": -111.0179,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "CA - Hunt  (CA-HU785)",
+      "global_id": "785",
+      "address": "4175 E La Palma Ave #110",
+      "city": "Anaheim",
+      "state": "CA",
+      "zip": "92807",
+      "phone": "949-553-9813",
+      "email": "lisa.hunt@modetransportation.com",
+      "contacts": [
+        "Lisa Hunt"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 33.859438,
+      "longitude": -117.826675,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "CA - Kuriger (CA-KU659)",
+      "global_id": "659",
+      "address": "17870 Castleton Street Ste 326",
+      "city": "City Of Industry",
+      "state": "CA",
+      "zip": "91748",
+      "phone": "909-695-0230",
+      "email": "ted.kuriger@modetransportation.com",
+      "contacts": [
+        "Ted Kuriger",
+        "Chris Kiefer",
+        "Rudy Helwich"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 33.992652,
+      "longitude": -117.914072,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "CA - Perry (CA-NLL)",
+      "global_id": "CA-NLL",
+      "address": "7706 Donohue Drive",
+      "city": "Dublin",
+      "state": "CA",
+      "zip": "94568",
+      "phone": "925-361-4686",
+      "email": "mperry@halogistics.com",
+      "contacts": [
+        "Melissa Perry"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 37.711996,
+      "longitude": -121.933046,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "CA - Kuriger (CA-KU773)",
+      "global_id": "773",
+      "address": "4047 1st Street Ste 210",
+      "city": "Livermore",
+      "state": "CA",
+      "zip": "94551",
+      "phone": "510-871-6200",
+      "email": "ted.kuriger@modetransportation.com",
+      "contacts": [
+        "Ted Kuriger",
+        "Chris Kiefer",
+        "Mark Thompson"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 37.692718,
+      "longitude": -121.749349,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "CA - Patterson (CA-PA352)",
+      "global_id": "352",
+      "address": "2918 N White Shores Drive",
+      "city": "Orange",
+      "state": "CA",
+      "zip": "92868",
+      "phone": "714-289-7121",
+      "email": "dave.patterson@modetransportation.com",
+      "contacts": [
+        "Dave Patterson"
+      ],
+      "services_raw": "LTL",
+      "service_modes": [
+        "LTL"
+      ],
+      "latitude": 33.837742,
+      "longitude": -117.850217,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "CA - Hughes (CA-HU524) (CA-HU925) (954)",
+      "global_id": "524;925",
+      "address": "41 Los Altos Rd.",
+      "city": "Orinda",
+      "state": "CA",
+      "zip": "94563",
+      "phone": "925-253-2898",
+      "email": "bill.hughes@modetransportation.com",
+      "contacts": [
+        "Bill Hughes"
+      ],
+      "services_raw": "Air; LTL; Ocean; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Air",
+        "Ocean"
+      ],
+      "latitude": 37.901201,
+      "longitude": -122.196884,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "CA - IBO (CA-JO112)",
+      "global_id": "112",
+      "address": "PO Box 688",
+      "city": "PORTOLA",
+      "state": "CA",
+      "zip": "96122",
+      "phone": "925.382.2252",
+      "email": "robb.johnson@modetransportation.com",
+      "contacts": [
+        "Robb Johnson"
+      ],
+      "services_raw": "",
+      "service_modes": [],
+      "latitude": 39.8105,
+      "longitude": -120.4691,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "CA - James (CA-JA472)",
+      "global_id": "472",
+      "address": "119 Merlot Way",
+      "city": "Rio Vista",
+      "state": "CA",
+      "zip": "94571",
+      "phone": "707-374-1450",
+      "email": "cal.james@modetransportation.com",
+      "contacts": [
+        "Cal James"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 38.152679,
+      "longitude": -121.699665,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "CA - Miller  (CA-MI197)",
+      "global_id": "197",
+      "address": "1198 Pacific Coast Hwy",
+      "city": "Seal Beach",
+      "state": "CA",
+      "zip": "90740",
+      "phone": "714-748-2995",
+      "email": "edie.miller@modetransportation.com",
+      "contacts": [
+        "Edie Miller"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 33.7602,
+      "longitude": -118.0808,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "CO - Kuriger (CO-KU265)",
+      "global_id": "265",
+      "address": "1118 Opal St #203",
+      "city": "Broomfield",
+      "state": "CO",
+      "zip": "80020",
+      "phone": "303-495-2755",
+      "email": "ted.kuriger@modetransportation.com",
+      "contacts": [
+        "Ted Kuriger",
+        "Chris Kiefer",
+        "Doug Selseth"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 39.932125,
+      "longitude": -105.087456,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "CO - Bouque (CO-BO451)",
+      "global_id": "451",
+      "address": "11963 Elm Drive",
+      "city": "Thornton",
+      "state": "CO",
+      "zip": "80233",
+      "phone": "303-288-3148",
+      "email": "don.bouque@modetransportation.com",
+      "contacts": [
+        "Don Bouque"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Flatbed; HWH",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 39.912781,
+      "longitude": -104.928736,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Cohen (FL-WC)",
+      "global_id": "FL-WC",
+      "address": "5301 N Federal Hwy #220",
+      "city": "Boca Raton",
+      "state": "FL",
+      "zip": "33487",
+      "phone": "877-617-1500",
+      "email": "warren.cohen@suntecktts.com",
+      "contacts": [
+        "Warren Cohen"
+      ],
+      "services_raw": "TL; Warehousing: Final Mile",
+      "service_modes": [
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 26.395849,
+      "longitude": -80.076518,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Miller (TN-RM)",
+      "global_id": "TN-RM",
+      "address": "133 Town Center Blvd Apt 6402",
+      "city": "Clermont",
+      "state": "FL",
+      "zip": "34714",
+      "phone": "352-432-6277",
+      "email": "rick.mille@suntecktts.com; gale.miller@suntecktts.com",
+      "contacts": [],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 28.349666,
+      "longitude": -81.664292,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Paulus (FL-PA276)",
+      "global_id": "276",
+      "address": "212 Willow Bend Drive",
+      "city": "Clermont",
+      "state": "FL",
+      "zip": "34711",
+      "phone": "208-267-9853",
+      "email": "jr.paulus@modetransportation.com",
+      "contacts": [
+        "Jim Paulus"
+      ],
+      "services_raw": "IM; Warehousing: Carload",
+      "service_modes": [
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 28.560427,
+      "longitude": -81.7384,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Harris (FL-JH)",
+      "global_id": "FL-JH",
+      "address": "14274 W Seaside CT",
+      "city": "Crystal River",
+      "state": "FL",
+      "zip": "34429",
+      "phone": "863-698-0754",
+      "email": "jennifer.harris@suntecktts.com",
+      "contacts": [
+        "Jennifer Harris"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 28.82393,
+      "longitude": -82.670267,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Miller (FL-UTS) (ET-UTS)",
+      "global_id": "FL-UTS; ET-UTS",
+      "address": "13225 Vantage Way Ste 110",
+      "city": "Jacksonville",
+      "state": "FL",
+      "zip": "32218",
+      "phone": "904-517-5230",
+      "email": "cmiller@ardentx.co",
+      "contacts": [
+        "Chuck Miller"
+      ],
+      "services_raw": "IM; LTL; TL; Warehousing: Warehouse",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 30.475227,
+      "longitude": -81.655669,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Peters (FL-PE950)",
+      "global_id": "950",
+      "address": "2339 Paramount Drive",
+      "city": "Jacksonville",
+      "state": "FL",
+      "zip": "32224",
+      "phone": "215-779-5256",
+      "email": "tony.peters@modetransportation.com",
+      "contacts": [
+        "Anthony Peters"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 30.30891,
+      "longitude": -81.45646,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Webster/Adams (FL-WE324)",
+      "global_id": "324",
+      "address": "8421 Baymeadows Way Ste 4C",
+      "city": "Jacksonville",
+      "state": "FL",
+      "zip": "32256",
+      "phone": "904-592-5423",
+      "email": "trent.webster@modetransportation.com",
+      "contacts": [
+        "Trent Webster",
+        "Craig Adams"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 30.220838,
+      "longitude": -81.582679,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Fallon (FL-SF) (ET-SF)",
+      "global_id": "FL-SF",
+      "address": "14011 Beach Blvd Ste 320",
+      "city": "Jacksonville",
+      "state": "FL",
+      "zip": "32250",
+      "phone": "",
+      "email": "",
+      "contacts": [
+        "Sam Fallon"
+      ],
+      "services_raw": "",
+      "service_modes": [],
+      "latitude": 30.287832,
+      "longitude": -81.448435,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Gordon (BOCA OFF)",
+      "global_id": "BOCA OFF",
+      "address": "228 Humphrey Ave lake",
+      "city": "Lake Placid",
+      "state": "FL",
+      "zip": "33852",
+      "phone": "561-910-6300",
+      "email": "scott.gordon@suntecktts.com",
+      "contacts": [
+        "Scott Gordon"
+      ],
+      "services_raw": "IM; LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM"
+      ],
+      "latitude": 27.266483,
+      "longitude": -81.387294,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Collins (FL-CO664)",
+      "global_id": "664",
+      "address": "6204 Everlasting Place",
+      "city": "Land O Lakes",
+      "state": "FL",
+      "zip": "34639",
+      "phone": "813-995-2500",
+      "email": "dave.collins@modetransportation.com",
+      "contacts": [
+        "Dave Collins"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 28.247211,
+      "longitude": -82.449866,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Howard (FL-HJB) (FL-WPPC) (FL-TH)",
+      "global_id": "FL-HJB; FL-WPCC; FL-TH;VA-KB",
+      "address": "1305 W Dr Martin Luther King Jr Blvd",
+      "city": "Plant City",
+      "state": "FL",
+      "zip": "33563",
+      "phone": "813-441-9781",
+      "email": "kay.howard@suntecktts.com",
+      "contacts": [
+        "Kay Howard"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Reefer",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 28.012967,
+      "longitude": -82.130981,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Spaulding (FL-SP851)",
+      "global_id": "851",
+      "address": "10033 Sawgrass Drive West Ste 220",
+      "city": "Ponte Vedra Beach",
+      "state": "FL",
+      "zip": "32082",
+      "phone": "904-273-9073",
+      "email": "john.spaulding@modetransportation.com",
+      "contacts": [
+        "John Spaulding"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 30.188243,
+      "longitude": -81.378195,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Schumann (FL-JS)",
+      "global_id": "FL-JS",
+      "address": "2200 N Ponce De Leon Blvd Ste 2",
+      "city": "Saint Augustine",
+      "state": "FL",
+      "zip": "32084",
+      "phone": "904-829-2800",
+      "email": "jay@suntecktts.com",
+      "contacts": [
+        "Jay Schumann"
+      ],
+      "services_raw": "IM; LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM"
+      ],
+      "latitude": 29.912793,
+      "longitude": -81.322935,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL -  Snow (FL-SN873)",
+      "global_id": "873",
+      "address": "138 8th Street N",
+      "city": "St. Petersburg",
+      "state": "FL",
+      "zip": "33701",
+      "phone": "727-502-0360",
+      "email": "steve.snow@modetransportation.com",
+      "contacts": [
+        "Steve Snow"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 27.772924,
+      "longitude": -82.644897,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "FL - Schwartz (NY-DS)",
+      "global_id": "NY-DS",
+      "address": "12957 Buckland Court",
+      "city": "Wellington",
+      "state": "FL",
+      "zip": "33414",
+      "phone": "516-658-4845",
+      "email": "david.schwartz@suntecktts.com",
+      "contacts": [
+        "David Schwartz"
+      ],
+      "services_raw": "IM; LTL; TL; Warehousing: Drayage",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 26.645103,
+      "longitude": -80.251472,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "GA - Bondie (GA-WGA)",
+      "global_id": "GA-WGA",
+      "address": "2920 Marietta Hwy  Ste 122",
+      "city": "Canton",
+      "state": "GA",
+      "zip": "30114",
+      "phone": "888-568-5776",
+      "email": "operations@tlmcorp.net",
+      "contacts": [
+        "Rick Bondie"
+      ],
+      "services_raw": "IM; LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM"
+      ],
+      "latitude": 34.208354,
+      "longitude": -84.50589,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "GA - Ledbetter (GA-LE790) (GA-LE544)",
+      "global_id": "544; 790",
+      "address": "1435 54th Street  Bldg 200  Suite A",
+      "city": "Columbus",
+      "state": "GA",
+      "zip": "31904",
+      "phone": "706-322-0938",
+      "email": "josh.ledbetter@modetransportation.com",
+      "contacts": [
+        "Josh Ledbetter",
+        "Josh Ledbetter"
+      ],
+      "services_raw": "Air; LTL; Ocean; TL; Warehousing: Reefer",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Air",
+        "Ocean",
+        "Warehousing"
+      ],
+      "latitude": 32.520805,
+      "longitude": -84.968333,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "GA - Ray (GA-CGA)",
+      "global_id": "GA-CGA",
+      "address": "2020 Chadwick Drive",
+      "city": "Cumming",
+      "state": "GA",
+      "zip": "30028",
+      "phone": "470-253-8625",
+      "email": "bobbie.ray@suntecktts.com",
+      "contacts": [
+        "Bobbie Ray"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 34.245398,
+      "longitude": -84.17764,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "GA - Pace (GA-AG)",
+      "global_id": "GA-AG",
+      "address": "215 Compton Drive",
+      "city": "Fayetteville",
+      "state": "GA",
+      "zip": "30215",
+      "phone": "678-545-2065",
+      "email": "angela.gray@suntecktts.com",
+      "contacts": [
+        "Angela Pace"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 33.366093,
+      "longitude": -84.437856,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "GA - Sanders (GA-JS)",
+      "global_id": "",
+      "address": "9909 Commerce St",
+      "city": "Summerville",
+      "state": "GA",
+      "zip": "30747",
+      "phone": "+17068080880",
+      "email": "",
+      "contacts": [
+        "Jane Sanders"
+      ],
+      "services_raw": "",
+      "service_modes": [],
+      "latitude": 34.479139,
+      "longitude": -85.348963,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "GA - Christian (GA-CH550)",
+      "global_id": "550",
+      "address": "1325 Satellite Blvd",
+      "city": "Suwanee",
+      "state": "GA",
+      "zip": "30024",
+      "phone": "470-326-5860",
+      "email": "courtenay.christian@modetransportation.com",
+      "contacts": [
+        "Courtenay Christian"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Expedited; Flatbed",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 34.008878,
+      "longitude": -84.07324,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "IA - Johnson (FL-BJ)",
+      "global_id": "FL-BJ",
+      "address": "3417 Mount Vernon Road SE",
+      "city": "Cedar Rapids",
+      "state": "IA",
+      "zip": "52403",
+      "phone": "866-783-0300",
+      "email": "brett.johnson@suntecktts.com",
+      "contacts": [
+        "Brett Johnson"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 41.976761,
+      "longitude": -91.61811,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "IA - Anderson (IA-AN874)",
+      "global_id": "874",
+      "address": "3711 Adams Ave.",
+      "city": "Des Moines",
+      "state": "IA",
+      "zip": "50310",
+      "phone": "515-251-3989",
+      "email": "doug.anderson@modetransportation.com",
+      "contacts": [
+        "Doug Anderson"
+      ],
+      "services_raw": "LTL",
+      "service_modes": [
+        "LTL"
+      ],
+      "latitude": 41.622296,
+      "longitude": -93.667215,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "ID - Sargis (ID-JGT)",
+      "global_id": "ID-JGT",
+      "address": "6702 W Fairview Ave",
+      "city": "Boise",
+      "state": "ID",
+      "zip": "83704",
+      "phone": "888-358-9993",
+      "email": "greg.sargis@suntecktts.com",
+      "contacts": [
+        "Greg Sargis"
+      ],
+      "services_raw": "IM; LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM"
+      ],
+      "latitude": 43.619299,
+      "longitude": -116.265105,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "ID - Varin (ID-VA948)",
+      "global_id": "(948) (ID-VA948)",
+      "address": "116 Third Ave East",
+      "city": "Gooding",
+      "state": "ID",
+      "zip": "83330",
+      "phone": "208-934-5963",
+      "email": "kevan.varin@modetransportation.com",
+      "contacts": [
+        "Kevan Varin",
+        "Cody Varin"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 42.942761,
+      "longitude": -114.712733,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "IL - Dillon  (IL-TH236)",
+      "global_id": "236",
+      "address": "2840 Whitetail Drive",
+      "city": "Charleston",
+      "state": "IL",
+      "zip": "61920",
+      "phone": "618-969-2053",
+      "email": "jeremy.dillon@modetransportation.com",
+      "contacts": [
+        "Jeremy Dillon"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 39.468157,
+      "longitude": -88.183034,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "IL - Klimah (IL-KL312)",
+      "global_id": "312",
+      "address": "817 Ogden Avenue #3042",
+      "city": "Lisle",
+      "state": "IL",
+      "zip": "60532",
+      "phone": "630-803-7638",
+      "email": "billy.klimah@modetransportation.com",
+      "contacts": [
+        "Billy Klimah"
+      ],
+      "services_raw": "IM; LTL",
+      "service_modes": [
+        "LTL",
+        "IM"
+      ],
+      "latitude": 41.7862,
+      "longitude": -88.0879,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "IL - Pacyga (IL-PA816)",
+      "global_id": "816",
+      "address": "9930 W 190th Street Ste G",
+      "city": "Mokena",
+      "state": "IL",
+      "zip": "60448",
+      "phone": "815-806-1790",
+      "email": "andrew.pacyga@modetransportation.com",
+      "contacts": [
+        "Andrew Pacyga"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 41.544809,
+      "longitude": -87.859545,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "IL - Judge (IL-JJ)",
+      "global_id": "IL-JJ",
+      "address": "407 Brannon Trace",
+      "city": "Shorewood",
+      "state": "IL",
+      "zip": "60404",
+      "phone": "815-782-7785",
+      "email": "jason.judge@suntecktts.com",
+      "contacts": [
+        "Jason Judge"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 41.527302,
+      "longitude": -88.231867,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "IL - Christensen (IL-C714) (391)",
+      "global_id": "391;714",
+      "address": "1600 N Milwaukee Ave Ste 1099",
+      "city": "Vernon Hills",
+      "state": "IL",
+      "zip": "60061",
+      "phone": "708-478-4449",
+      "email": "doug.christensen@modetransportation.com",
+      "contacts": [
+        "Doug Christensen"
+      ],
+      "services_raw": "Air; Ocean",
+      "service_modes": [
+        "Air",
+        "Ocean"
+      ],
+      "latitude": 42.2288,
+      "longitude": -87.9719,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "IN - Harmon (IN-AIN)",
+      "global_id": "IN-AIN",
+      "address": "820 West 37th Street",
+      "city": "Anderson",
+      "state": "IN",
+      "zip": "46013",
+      "phone": "765-644-8911",
+      "email": "dax.harmon@suntecktts.com",
+      "contacts": [
+        "Dax Harmon"
+      ],
+      "services_raw": "TL; Warehousing: Reefer",
+      "service_modes": [
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 40.077221,
+      "longitude": -85.690652,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "IN - Stern (IN-DCO)",
+      "global_id": "IN-DCO",
+      "address": "9588 Meeting Street",
+      "city": "Fishers",
+      "state": "IN",
+      "zip": "46038",
+      "phone": "480-321-9443",
+      "email": "carol.stern@suntecktts.com",
+      "contacts": [
+        "Carol Stern"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Reefer",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 39.974871,
+      "longitude": -85.997983,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "IN - Worrall (IN-MIN)",
+      "global_id": "IN-MIN",
+      "address": "1109 Ebenezer Church Road",
+      "city": "Memphis",
+      "state": "IN",
+      "zip": "47143",
+      "phone": "812-294-3638",
+      "email": "terry.worrall@suntecktts.com",
+      "contacts": [
+        "Terry Worrall"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 38.472959,
+      "longitude": -85.777262,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "KS - Ditto (MO-SUN)",
+      "global_id": "MO-SUN",
+      "address": "14821 Conser Street",
+      "city": "Overland Park",
+      "state": "KS",
+      "zip": "66223",
+      "phone": "573-207-0340",
+      "email": "john.ditto@modetransportation.com",
+      "contacts": [
+        "John Ditto"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 38.859846,
+      "longitude": -94.671553,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "LA - Darte (LA-DA328)",
+      "global_id": "328",
+      "address": "2101 Third Street  Suite A",
+      "city": "Slidell",
+      "state": "LA",
+      "zip": "70458",
+      "phone": "985-649-1927",
+      "email": "chris.darte@modetransportation.com",
+      "contacts": [
+        "Chris Darte",
+        "Walt Darte"
+      ],
+      "services_raw": "IM; TL; Warehousing: Cross Border",
+      "service_modes": [
+        "TL",
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 30.275144,
+      "longitude": -89.780541,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "LA - Crain (LA-CR143)",
+      "global_id": "143",
+      "address": "31341 River Pines Drive",
+      "city": "Springfield",
+      "state": "LA",
+      "zip": "70462",
+      "phone": "985-981-5474",
+      "email": "rod.crain@modetransportation.com",
+      "contacts": [
+        "Rod Crain"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 30.384474,
+      "longitude": -90.565651,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MA - Mavretic (MA-MA452)",
+      "global_id": "452",
+      "address": "208 Wilson Street",
+      "city": "Marlborough",
+      "state": "MA",
+      "zip": "01752",
+      "phone": "508-341-7120",
+      "email": "david.mavretic@modetransportation.com",
+      "contacts": [
+        "David Mavretic"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 42.354596,
+      "longitude": -71.509439,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MA - Vespa (MA-VE735)",
+      "global_id": "735",
+      "address": "1 Kellaway Dr.",
+      "city": "Randolph",
+      "state": "MA",
+      "zip": "02368",
+      "phone": "781-767-6100",
+      "email": "nick.vespa@modetransportation.com",
+      "contacts": [
+        "Nick Vespa"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 42.167984,
+      "longitude": -71.017888,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MD - Platt (MD-JP)",
+      "global_id": "MD-JP",
+      "address": "122 E. Patrick St.",
+      "city": "Frederick",
+      "state": "MD",
+      "zip": "21701",
+      "phone": "301-662-9462",
+      "email": "jeff.platt@suntecktts.com",
+      "contacts": [
+        "Jeff Platt"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 39.413982,
+      "longitude": -77.408722,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "ME - Libby (ME-PPM)",
+      "global_id": "ME-PPM",
+      "address": "1111 Shore Road",
+      "city": "Cape Elizabeth",
+      "state": "ME",
+      "zip": "04107",
+      "phone": "207-632-3140",
+      "email": "matt.libby@suntecktts.com",
+      "contacts": [
+        "Matt Libby"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 43.608164,
+      "longitude": -70.216511,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MI - Wargelin (TX-WA761)",
+      "global_id": "761",
+      "address": "1105 Joyce Lane",
+      "city": "Ann Arbor",
+      "state": "MI",
+      "zip": "48103",
+      "phone": "855-310-1080",
+      "email": "kristen.wargelin@modetransportation.com",
+      "contacts": [
+        "Kristen Wargelin"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 42.268305,
+      "longitude": -83.791264,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MI - Thomas (MI-TH941)",
+      "global_id": "941",
+      "address": "43570 Garfield Road #101B",
+      "city": "Clinton Township",
+      "state": "MI",
+      "zip": "48038",
+      "phone": "586-228-9846",
+      "email": "john.thomas@modetransportation.com",
+      "contacts": [
+        "John Thomas"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Expedited; Final Mile",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 42.616725,
+      "longitude": -82.953035,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MI - Venturini (CA-VE177)",
+      "global_id": "177",
+      "address": "2907 Walmsley Circle Drive",
+      "city": "Lake Orion",
+      "state": "MI",
+      "zip": "48360",
+      "phone": "805-450-0408",
+      "email": "john.venturini@modetransportation.com",
+      "contacts": [
+        "John Venturini"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Flatbed",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 42.737132,
+      "longitude": -83.302528,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MI - Kerley (MI-RK)",
+      "global_id": "MI-RK",
+      "address": "12885 Johanna Court",
+      "city": "Riverview",
+      "state": "MI",
+      "zip": "48193",
+      "phone": "734-250-7528",
+      "email": "robert.kerley@suntecktts.com",
+      "contacts": [
+        "Robert Kerley"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 42.176961,
+      "longitude": -83.181304,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MN - Barkosky (MN-BA482)",
+      "global_id": "482",
+      "address": "12266 Unity ST NW",
+      "city": "Minneapolis",
+      "state": "MN",
+      "zip": "55448",
+      "phone": "763-783-3611",
+      "email": "ron.barkosky@modetransportation.com",
+      "contacts": [
+        "Ron Barkosky"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 45.192133,
+      "longitude": -93.291306,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MN - Hanson (MN-HA264)",
+      "global_id": "264",
+      "address": "14000 25th Ave. N.  Ste 116",
+      "city": "Plymouth",
+      "state": "MN",
+      "zip": "55447",
+      "phone": "763-550-1812",
+      "email": "todd.hanson@modetransportation.com",
+      "contacts": [
+        "Todd Hanson",
+        "David Hargarten"
+      ],
+      "services_raw": "IM; LTL; TL; Warehousing: Drayage; Final Mile",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 45.006694,
+      "longitude": -93.459081,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MO - Perone (MO-PE409)",
+      "global_id": "409; 660",
+      "address": "1410 Fenway Farms Court",
+      "city": "Fenton",
+      "state": "MO",
+      "zip": "63026",
+      "phone": "636-326-2784",
+      "email": "phil.perone@modetransportation.com",
+      "contacts": [
+        "Phil Perone",
+        "Dan Baltz",
+        "James Backer"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 38.531916,
+      "longitude": -90.47883,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MO - Reece (MO-GMO)",
+      "global_id": "MO-GMO",
+      "address": "3603 NE 57th Street",
+      "city": "Gladstone",
+      "state": "MO",
+      "zip": "64119",
+      "phone": "816-265-2492",
+      "email": "jenny.reece@suntecktts.com",
+      "contacts": [
+        "Jenny Reece"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 39.196952,
+      "longitude": -94.537292,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MO - Hinds (KS-GH)",
+      "global_id": "KS-GH",
+      "address": "3315 E Ridgeview St",
+      "city": "Springfield",
+      "state": "MO",
+      "zip": "65804",
+      "phone": "316-777-9933",
+      "email": "glen.hinds@suntecktts.com",
+      "contacts": [
+        "Glen Hinds",
+        "Frankie Hinds"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 37.159363,
+      "longitude": -93.227835,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MS - Cottingham (MS-CO891)",
+      "global_id": "891",
+      "address": "9273 Jefferson Drive",
+      "city": "Olive Branch",
+      "state": "MS",
+      "zip": "38654",
+      "phone": "",
+      "email": "debby.cottingham@modetransportation.com",
+      "contacts": [
+        "Debby Cottingham"
+      ],
+      "services_raw": "TL; Warehousing: Flatbed",
+      "service_modes": [
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 34.945721,
+      "longitude": -89.825388,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MS - Dickson (MS-BD) (ET-MSBD) (MJ-TX)",
+      "global_id": "MS-BD/ET-MSBD/MJ-TX/MO-RM/MS-JM/MS-KK/MS-MC/TN-RR",
+      "address": "833 Old Hwy 45",
+      "city": "Saltillo",
+      "state": "MS",
+      "zip": "38866",
+      "phone": "662-844-4933",
+      "email": "bradley.dickson@suntecktts.com",
+      "contacts": [
+        "Bradley Dickson"
+      ],
+      "services_raw": "IM; LTL; TL; Warehousing: Bulk; Drayage; Flatbed",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 34.371701,
+      "longitude": -88.708182,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "MS - Wright (MS-WR818)",
+      "global_id": "818",
+      "address": "97 Stateline Road East",
+      "city": "Southaven",
+      "state": "MS",
+      "zip": "38671",
+      "phone": "662-470-5757",
+      "email": "larry.wrightjr@modetransportation.com",
+      "contacts": [
+        "Larry WrightJR",
+        "Jack Wright",
+        "Larry WrightSr"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 34.991756,
+      "longitude": -89.987972,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "NC - Reedy/Wiesner (SC-DR)",
+      "global_id": "SC-DR",
+      "address": "8720 Red Oak Blvd Ste 510",
+      "city": "Charlotte",
+      "state": "NC",
+      "zip": "28217",
+      "phone": "704-496-9850",
+      "email": "dwayne.reedy@suntecktts.com",
+      "contacts": [
+        "Dwayne Reedy",
+        "Nick Wiesner"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Expedited",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 35.142574,
+      "longitude": -80.905393,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "CA - Kalasky (CA-KA896)",
+      "global_id": "896",
+      "address": "427 River Dell Townes Ave",
+      "city": "Clayton",
+      "state": "NC",
+      "zip": "27527",
+      "phone": "626-616-6783",
+      "email": "larry.kalasky@modetransportation.com",
+      "contacts": [
+        "Larry Kalasky",
+        "ARCHIVED ARCHIVED"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 35.668427,
+      "longitude": -78.345703,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "NC - Bechstein (NC-CS)",
+      "global_id": "NC-CS",
+      "address": "601 Chase Prairie Lane",
+      "city": "Waxhaw",
+      "state": "NC",
+      "zip": "28173",
+      "phone": "704-208-4240",
+      "email": "drew.bechstein@suntecktts.com",
+      "contacts": [],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 34.990081,
+      "longitude": -80.719997,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "NC - Bowman (SC-BO453)",
+      "global_id": "453",
+      "address": "2101 Sedbrook Lane",
+      "city": "Winterville",
+      "state": "NC",
+      "zip": "28590",
+      "phone": "843-375-6625",
+      "email": "greg.bowman@modetransportation.com",
+      "contacts": [
+        "Greg Bowman"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 35.537312,
+      "longitude": -77.359275,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "NJ - Caracappa (NJ-CA249)",
+      "global_id": "249",
+      "address": "400 Heller Park Court",
+      "city": "Dayton",
+      "state": "NJ",
+      "zip": "08810",
+      "phone": "732-491-8984",
+      "email": "michael.caracappa@modetransportation.com",
+      "contacts": [
+        "Michael Caracappa"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Drayage",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 40.375596,
+      "longitude": -74.496154,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "NJ - Althawabta (NJ-AA)",
+      "global_id": "NJ-AA",
+      "address": "709 Iron Latch Road",
+      "city": "Franklin Lakes",
+      "state": "NJ",
+      "zip": "07417",
+      "phone": "551-689-7016",
+      "email": "ashraf.althawabta@suntecktts.com",
+      "contacts": [],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 41.026191,
+      "longitude": -74.215633,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "NJ - Fleming (NJ-RB)",
+      "global_id": "",
+      "address": "502 FAIRFIELD ROAD EAST",
+      "city": "Windsor",
+      "state": "NJ",
+      "zip": "08520",
+      "phone": "+12502626593",
+      "email": "",
+      "contacts": [
+        "R. Blake Fleming"
+      ],
+      "services_raw": "",
+      "service_modes": [],
+      "latitude": 40.271872,
+      "longitude": -74.487743,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "NV - Daniels/Byrnes (NV-DA743) (NV-756)",
+      "global_id": "743; 756",
+      "address": "10624 S Eastern Ave #1102",
+      "city": "Henderson",
+      "state": "NV",
+      "zip": "89052",
+      "phone": "702-296-4286",
+      "email": "kim.daniels@modetransportation.com",
+      "contacts": [
+        "Erin Byrnes",
+        "Kim Daniels"
+      ],
+      "services_raw": "Air; Ocean",
+      "service_modes": [
+        "Air",
+        "Ocean"
+      ],
+      "latitude": 35.998757,
+      "longitude": -115.104116,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "NV - Scott (NV-LVL)",
+      "global_id": "NV-LVL",
+      "address": "2752 Sandalwood Ave",
+      "city": "Henderson",
+      "state": "NV",
+      "zip": "89074",
+      "phone": "702-465-3735",
+      "email": "jacque.scott@suntecktts.com",
+      "contacts": [
+        "Jacque Scott"
+      ],
+      "services_raw": "IM; LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM"
+      ],
+      "latitude": 36.047823,
+      "longitude": -115.107402,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "NY - Dadian (NY-DA940)",
+      "global_id": "940",
+      "address": "1530 East 17th Street",
+      "city": "Brooklyn",
+      "state": "NY",
+      "zip": "11230",
+      "phone": "607-424-2055",
+      "email": "david.dadian@modetransportation.com",
+      "contacts": [
+        "David Dadian"
+      ],
+      "services_raw": "LTL; Warehousing: Expedited",
+      "service_modes": [
+        "LTL",
+        "Warehousing"
+      ],
+      "latitude": 40.612779,
+      "longitude": -73.957191,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "OH - Price (OH-PRI)",
+      "global_id": "OH-PRI;DE-HOF",
+      "address": "12540 Edgewater Drive Unit 611",
+      "city": "Lakewood",
+      "state": "OH",
+      "zip": "44107",
+      "phone": "614-397-9559",
+      "email": "shawn.price@suntecktts.com",
+      "contacts": [
+        "Shawn Price"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 41.49202,
+      "longitude": -81.775701,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "OH - Ellwood (WV-EL289)",
+      "global_id": "289",
+      "address": "8080 Mills Road",
+      "city": "Ostrander",
+      "state": "OH",
+      "zip": "43061",
+      "phone": "614-570-1430",
+      "email": "david.ellwood@@modetransportation.com",
+      "contacts": [
+        "David Ellwood"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 40.250138,
+      "longitude": -83.199049,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "OH - Daggett (OH-TD)",
+      "global_id": "OH-TD",
+      "address": "282 Windemere Place",
+      "city": "Shreve",
+      "state": "OH",
+      "zip": "43082",
+      "phone": "330-473-1082",
+      "email": "timothy.daggett@suntecktts.com",
+      "contacts": [
+        "Tim Daggett"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 40.136252,
+      "longitude": -82.921965,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "OK - Hooker (OK-OAK)",
+      "global_id": "OK-OAK",
+      "address": "701 NW 5th Street",
+      "city": "Oklahoma City",
+      "state": "OK",
+      "zip": "73102",
+      "phone": "405-605-2087",
+      "email": "dustin.hooker@suntecktts.com",
+      "contacts": [
+        "Dustin Hooker"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 35.473209,
+      "longitude": -97.524431,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "ON - Swoffer (CAN-SS)",
+      "global_id": "CAN-SS",
+      "address": "164 Elmwood Drive",
+      "city": "Belleville",
+      "state": "ON",
+      "zip": "K8N 4Z4",
+      "phone": "613-210-0635",
+      "email": "shirley.swoffer@suntecktts.com",
+      "contacts": [
+        "Shirley Swoffer"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 44.1735,
+      "longitude": -77.3684,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "ON - Kelly (ON-KE657)",
+      "global_id": "657; 712",
+      "address": "2754 James Snow Parkway North",
+      "city": "Milton",
+      "state": "ON",
+      "zip": "L9T 6P3",
+      "phone": "905-876-0909",
+      "email": "pat.kelly@modetransportation.com",
+      "contacts": [
+        "Pat Kelly"
+      ],
+      "services_raw": "IM; TL; Warehousing: Cross Border; Warehouse",
+      "service_modes": [
+        "TL",
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 43.5148,
+      "longitude": -79.884,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "ON - Bidwell (ON-BI272) (ON-BI273)",
+      "global_id": "272;273",
+      "address": "2727 Meadowpine Blvd Ste 203",
+      "city": "Mississauga",
+      "state": "ON",
+      "zip": "L5N 0E1",
+      "phone": "800-463-7132",
+      "email": "glen.bidwell@modetransportation.com",
+      "contacts": [
+        "Glen Bidwell"
+      ],
+      "services_raw": "LTL; Parcel; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Parcel"
+      ],
+      "latitude": 43.5924,
+      "longitude": -79.7611,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "ON - Saunders (ON-SA234) (ON-SA237)",
+      "global_id": "234; 237",
+      "address": "2727 Meadowpine Blvd Ste 203",
+      "city": "Mississauga",
+      "state": "ON",
+      "zip": "L5N 0E1",
+      "phone": "800-268-4575",
+      "email": "kelli.saunders@modetransportation.com",
+      "contacts": [
+        "Kelli Saunders"
+      ],
+      "services_raw": "IM; LTL; TL; Warehousing: Cross Border; WBE",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 43.5924,
+      "longitude": -79.7611,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "OR - Papworth (OR-PA137)",
+      "global_id": "137",
+      "address": "15682 S Sisters Way",
+      "city": "Beavercreek",
+      "state": "OR",
+      "zip": "97004",
+      "phone": "503-632-6700",
+      "email": "greg.papworth@modetransportation.com",
+      "contacts": [
+        "Greg Papworth"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 45.293318,
+      "longitude": -122.543609,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "PA - King (PA-BPA)",
+      "global_id": "PA-BPA",
+      "address": "1032 Newport Mews Drive",
+      "city": "Bensalem",
+      "state": "PA",
+      "zip": "19020",
+      "phone": "215-541-5530",
+      "email": "bob.king@suntecktts.com",
+      "contacts": [
+        "Bob King"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 40.117784,
+      "longitude": -74.911647,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "PA - Kuriger/Kiefer (PA-KU729)",
+      "global_id": "144;424;604;729",
+      "address": "160 New Britain Blvd",
+      "city": "Chalfont",
+      "state": "PA",
+      "zip": "18914",
+      "phone": "800-592-7449",
+      "email": "ted.kuriger@modetransportation.com",
+      "contacts": [
+        "Ted Kuriger",
+        "Chris Kiefer",
+        "Frank Whalen"
+      ],
+      "services_raw": "Air; IM; LTL; Ocean; TL; Warehousing: Reefer; Warehouse",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM",
+        "Air",
+        "Ocean",
+        "Warehousing"
+      ],
+      "latitude": 40.284989,
+      "longitude": -75.247571,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "Coraopolis, PA - Kuriger (PA-KU319)",
+      "global_id": "319",
+      "address": "2010 A State Ave",
+      "city": "Coraopolis",
+      "state": "PA",
+      "zip": "15108",
+      "phone": "",
+      "email": "",
+      "contacts": [
+        "Ted Kuriger",
+        "Chris Kiefer"
+      ],
+      "services_raw": "",
+      "service_modes": [],
+      "latitude": 40.509502,
+      "longitude": -80.15029,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "PA - Lang (PA-LA580)",
+      "global_id": "371",
+      "address": "104 Seneca Farm Drive",
+      "city": "Harmony",
+      "state": "PA",
+      "zip": "16037",
+      "phone": "724-452-4620",
+      "email": "david.lang@modetransportation.com",
+      "contacts": [
+        "David Lang",
+        "Joseph Lang"
+      ],
+      "services_raw": "TL; Warehousing: Cross Border",
+      "service_modes": [
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 40.827511,
+      "longitude": -80.132788,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "PA - Kuriger (PA-KU918)",
+      "global_id": "918",
+      "address": "320 Bilmar Drive",
+      "city": "Pittsburgh",
+      "state": "PA",
+      "zip": "15205",
+      "phone": "888-460-6789",
+      "email": "ted.kuriger@modetransportation.com",
+      "contacts": [
+        "Ted Kuriger",
+        "Chris Kiefer",
+        "Brad Zwierlein"
+      ],
+      "services_raw": "IM; LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM"
+      ],
+      "latitude": 40.452288,
+      "longitude": -80.105146,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "PA - Kuriger (NJ-KU520)",
+      "global_id": "520",
+      "address": "2577 Interplex Drive Ste 203-204A",
+      "city": "Trevose",
+      "state": "PA",
+      "zip": "19053",
+      "phone": "888-235-6855",
+      "email": "ted.kuriger@modetransportation.com",
+      "contacts": [
+        "Ted Kuriger",
+        "Chris Kiefer",
+        "Jen Ciuckis"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 40.126158,
+      "longitude": -74.977736,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "SC - Mayes (SC-CM)",
+      "global_id": "SC-CM",
+      "address": "152 Melbourne Drive",
+      "city": "Fort Mill",
+      "state": "SC",
+      "zip": "29708",
+      "phone": "803-548-1124",
+      "email": "corey@suntecktts.com",
+      "contacts": [
+        "Corey Mayes"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 35.072632,
+      "longitude": -80.953657,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "SC - Tarbell (SC-JT)",
+      "global_id": "SC-JT",
+      "address": "214 Brookside Drive",
+      "city": "Fort Mill",
+      "state": "SC",
+      "zip": "29715",
+      "phone": "803-415-5575",
+      "email": "jerad.tarbell2@suntecktts.com",
+      "contacts": [
+        "Jerad Tarbell"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 35.024822,
+      "longitude": -80.904267,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "SC - Clarkson (SC-KC)",
+      "global_id": "SC-KC",
+      "address": "328 Riverchase Way Ste D",
+      "city": "Lexington",
+      "state": "SC",
+      "zip": "29072",
+      "phone": "803-356-0729",
+      "email": "ken.clarkson@suntecktts.com",
+      "contacts": [
+        "Ken Clarkson"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 34.021263,
+      "longitude": -81.134805,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "SC - Wallace (SC-PW)",
+      "global_id": "SC-PW",
+      "address": "85 Vincent Drive Ste A",
+      "city": "Mount Pleasant",
+      "state": "SC",
+      "zip": "29464",
+      "phone": "843-881-9055",
+      "email": "peter.wallace@suntecktts.com",
+      "contacts": [
+        "Peter Wallace"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 32.79488,
+      "longitude": -79.867954,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "NC -  Kuriger (NC-KU436)",
+      "global_id": "436",
+      "address": "1180 Stonecrest Blvd Ste 108",
+      "city": "Tega Cay",
+      "state": "SC",
+      "zip": "29708",
+      "phone": "803-547-0628",
+      "email": "ted.kuriger@modetransportation.com",
+      "contacts": [
+        "Ted Kuriger",
+        "Chris Kiefer"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 35.046453,
+      "longitude": -80.997072,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TN - Brooks (TN-RB)",
+      "global_id": "TN-RB",
+      "address": "559 Hwy 30 W",
+      "city": "Athens",
+      "state": "TN",
+      "zip": "37303",
+      "phone": "423-466-6389",
+      "email": "robert.brooks@suntecktts.com",
+      "contacts": [
+        "Robert (Robbie) Brooks"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 35.469835,
+      "longitude": -84.657265,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TN - Jones (CA-VJ)",
+      "global_id": "Ca-VJ",
+      "address": "525 Littlestone Drive",
+      "city": "Brentwood",
+      "state": "TN",
+      "zip": "37027",
+      "phone": "310-492-3712",
+      "email": "victor.jones@suntecktts.com",
+      "contacts": [],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 36.004094,
+      "longitude": -86.728539,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "Avenger Logistics",
+      "global_id": "AVENGER",
+      "address": "1810 Chestnut St",
+      "city": "Chattanooga",
+      "state": "TN",
+      "zip": "37408",
+      "phone": "",
+      "email": "",
+      "contacts": [],
+      "services_raw": "",
+      "service_modes": [],
+      "latitude": 35.036318,
+      "longitude": -85.314475,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TN - Sanders (TN-SA531)",
+      "global_id": "531",
+      "address": "133 Holiday Court  Suite 200",
+      "city": "Franklin",
+      "state": "TN",
+      "zip": "37067",
+      "phone": "615-595-7761",
+      "email": "bobby.sanders@modetransportation.com",
+      "contacts": [
+        "Bobby Sanders"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 35.917039,
+      "longitude": -86.827181,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TN - O' Leary (TN-OL805)",
+      "global_id": "805",
+      "address": "406 Gragson Drive",
+      "city": "Memphis",
+      "state": "TN",
+      "zip": "38106",
+      "phone": "901-417-6016",
+      "email": "kelly.oleary@modetransportation.com",
+      "contacts": [
+        "Kelly O'Leary",
+        "Casey Lenahan"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Warehouse",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 35.078493,
+      "longitude": -90.049322,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TN - Whitehorn ( TN-WH414) (TN-WH430)",
+      "global_id": "(414) (430)",
+      "address": "3750 Hacks Cross Road",
+      "city": "Memphis",
+      "state": "TN",
+      "zip": "38125",
+      "phone": "901-677-4380",
+      "email": "tresa.whitehorn@modetransportation.com",
+      "contacts": [
+        "Tresa Whitehorn"
+      ],
+      "services_raw": "Air; Ocean",
+      "service_modes": [
+        "Air",
+        "Ocean"
+      ],
+      "latitude": 35.044984,
+      "longitude": -89.795466,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TN - Kuriger (TN-KU821)",
+      "global_id": "821",
+      "address": "7894 Winchester Rd.  Ste. 200",
+      "city": "Memphis",
+      "state": "TN",
+      "zip": "38125",
+      "phone": "901-853-5088",
+      "email": "ted.kuriger@modetransportation.com",
+      "contacts": [
+        "Ted Kuriger",
+        "Chris Kiefer",
+        "Dan Hill"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Warehouse",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 35.048849,
+      "longitude": -89.800528,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Bowles (TX-ABI)",
+      "global_id": "TX-ABI",
+      "address": "3926 Inverrary Dr",
+      "city": "Abilene",
+      "state": "TX",
+      "zip": "79606",
+      "phone": "800-272-7922",
+      "email": "tim.bowles@suntecktts.com",
+      "contacts": [
+        "Tim Bowles",
+        "Susan Bowles"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 32.369788,
+      "longitude": -99.771445,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Hurst (TX-HU427)",
+      "global_id": "(427) (TX-HU427)",
+      "address": "4201 Old Dominion Drive",
+      "city": "Arlington",
+      "state": "TX",
+      "zip": "76016",
+      "phone": "214-728-2033",
+      "email": "derek.hurst@modetransportation.com",
+      "contacts": [
+        "Derek Hurst"
+      ],
+      "services_raw": "TL; Warehousing: Flatbed",
+      "service_modes": [
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 32.682275,
+      "longitude": -97.182006,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - McConnico (TX-WLM) (TX-WMZ)",
+      "global_id": "TX-WLM;TX-WMZ",
+      "address": "2648 FM 407 Ste 230",
+      "city": "Bartonville",
+      "state": "TX",
+      "zip": "76226",
+      "phone": "972-576-0550",
+      "email": "wmcconnico@halogistics.com",
+      "contacts": [
+        "Whitney McConnico",
+        "Clay Mcconnico"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 33.091642,
+      "longitude": -97.13126,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Gillispie (TX-GI802) (TX-GI176)",
+      "global_id": "802;176",
+      "address": "6702 County Road 334",
+      "city": "Caldwell",
+      "state": "TX",
+      "zip": "77836",
+      "phone": "972-412-6533",
+      "email": "john.gillispie@modetransportation.com",
+      "contacts": [
+        "John Gillispie"
+      ],
+      "services_raw": "IM; LTL; TL; Warehousing: Reefer; Warehouse",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 30.671643,
+      "longitude": -96.69592,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Almazan (TX-AL853)",
+      "global_id": "853",
+      "address": "1711 Briercroft Ct.  Ste 140",
+      "city": "Carrollton",
+      "state": "TX",
+      "zip": "75006",
+      "phone": "844-888-4982",
+      "email": "robert.almazan@modetransportation.com",
+      "contacts": [
+        "Robert Almazan"
+      ],
+      "services_raw": "TL; Warehousing: Final Mile; Reefer",
+      "service_modes": [
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 32.938502,
+      "longitude": -96.926908,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Richie (TX-RI724)",
+      "global_id": "724",
+      "address": "1404 Vinylex Drive",
+      "city": "Carrollton",
+      "state": "TX",
+      "zip": "75006",
+      "phone": "800-445-2057",
+      "email": "jim.richie@modetransportation.com",
+      "contacts": [
+        "Jim Richie"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Final Mile",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 32.958684,
+      "longitude": -96.911115,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Mizell (TX-MI913)",
+      "global_id": "913",
+      "address": "P.O. Box 2914",
+      "city": "Conroe",
+      "state": "TX",
+      "zip": "77305",
+      "phone": "281-456-2040",
+      "email": "mike.mizell@modetransportation.com",
+      "contacts": [
+        "Mike Mizell"
+      ],
+      "services_raw": "LTL",
+      "service_modes": [
+        "LTL"
+      ],
+      "latitude": 30.2906,
+      "longitude": -95.3832,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "TX - Buckley (TX-BU253)",
+      "global_id": "253",
+      "address": "13612 Midway Road #290",
+      "city": "Dallas",
+      "state": "TX",
+      "zip": "75244",
+      "phone": "972-387-0101",
+      "email": "james.buckley@modetransportation.com",
+      "contacts": [
+        "James Buckley"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 32.933362,
+      "longitude": -96.838865,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Fennell (TX-FE426)",
+      "global_id": "426",
+      "address": "6311 Bryan Pkwy",
+      "city": "Dallas",
+      "state": "TX",
+      "zip": "75204",
+      "phone": "972-442-3303",
+      "email": "mike.fennell@modetransportation.com",
+      "contacts": [
+        "Mike Fennell"
+      ],
+      "services_raw": "IM; LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM"
+      ],
+      "latitude": 32.811963,
+      "longitude": -96.760054,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Spradlin (TX-SP893)",
+      "global_id": "893",
+      "address": "3839 MCKINNEY AVE STE 155-714",
+      "city": "Dallas",
+      "state": "TX",
+      "zip": "75204",
+      "phone": "214-782-9051",
+      "email": "sean.spradlin@modetransportation.com",
+      "contacts": [
+        "Sean Spradlin"
+      ],
+      "services_raw": "LTL; TL; Warehousing: HWH",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 32.808944,
+      "longitude": -96.795675,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Forward (TX-FO806)",
+      "global_id": "806",
+      "address": "4725 Teal Bend Blvd",
+      "city": "Fresno",
+      "state": "TX",
+      "zip": "77545",
+      "phone": "281-915-5917",
+      "email": "percy.forward@modetransportation.com",
+      "contacts": [
+        "Percy Forward"
+      ],
+      "services_raw": "IM; LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM"
+      ],
+      "latitude": 29.518926,
+      "longitude": -95.479328,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Stapleton (TX-ST260)",
+      "global_id": "(260) (TX-ST260)",
+      "address": "4712 Flat Rock Road",
+      "city": "Ft Worth",
+      "state": "TX",
+      "zip": "76132",
+      "phone": "817-263-1906",
+      "email": "ronnie.stapleton@modetransportation.com",
+      "contacts": [
+        "Ronnie Stapleton"
+      ],
+      "services_raw": "TL; Warehousing: Reefer",
+      "service_modes": [
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 32.674604,
+      "longitude": -97.394718,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Shubin (TX-SH233)",
+      "global_id": "233",
+      "address": "1032-G East Ist Street",
+      "city": "Humble",
+      "state": "TX",
+      "zip": "77338",
+      "phone": "281-973-2033",
+      "email": "david.shubin@modetransportation.com",
+      "contacts": [
+        "David Shubin"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 30.0041,
+      "longitude": -95.2825,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "TX - Ybarra (TX-LY)",
+      "global_id": "TX-LY",
+      "address": "110 Century Drive North",
+      "city": "Laredo",
+      "state": "TX",
+      "zip": "78043",
+      "phone": "956-242-4646",
+      "email": "luis.ybarra@suntecktts.com",
+      "contacts": [
+        "Luis Ybarra"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 27.487737,
+      "longitude": -99.45426,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Christensen (TX-CH522)",
+      "global_id": "522",
+      "address": "5802 Sugar Bush Drive",
+      "city": "Magnolia",
+      "state": "TX",
+      "zip": "77354",
+      "phone": "281-678-1800",
+      "email": "david.a.christensen@modetransportation.com",
+      "contacts": [
+        "David.A Christensen"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 30.237676,
+      "longitude": -95.553601,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Colaruotolo/Botts/Spears(TX-RED)",
+      "global_id": "TX-RED",
+      "address": "5600 Tennyson Pkwy Ste 135",
+      "city": "Plano",
+      "state": "TX",
+      "zip": "75024",
+      "phone": "214-407-2811",
+      "email": "joe.colaruotolo@suntecktts.com",
+      "contacts": [
+        "Joe Colaruotolo",
+        "Carrie Botts",
+        "Conan Spears",
+        "Jennifer Spears"
+      ],
+      "services_raw": "IM; LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM"
+      ],
+      "latitude": 33.070533,
+      "longitude": -96.815964,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Morgan (TX-MO965)",
+      "global_id": "TX-MO965",
+      "address": "2108 MCDANIEL CIRCLE",
+      "city": "Plano",
+      "state": "TX",
+      "zip": "75075",
+      "phone": "945-800-2154",
+      "email": "dan.morgan@modetransportation.com",
+      "contacts": [
+        "Dan Morgan"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Bulk; Expedited; Final Mile; Flatbed; Reefer",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 33.028596,
+      "longitude": -96.734556,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Poore (TX-PO865)",
+      "global_id": "865",
+      "address": "19308 Riverwalk Drive",
+      "city": "Porter",
+      "state": "TX",
+      "zip": "77365",
+      "phone": "832-250-3932",
+      "email": "michele.poore@modetransportation.com",
+      "contacts": [
+        "Michele Poore"
+      ],
+      "services_raw": "LTL",
+      "service_modes": [
+        "LTL"
+      ],
+      "latitude": 30.1237,
+      "longitude": -95.2686,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "TX - Pilgrim (TX-DJR)",
+      "global_id": "TX-DJR",
+      "address": "1801 Gateway Blvd Ste 201",
+      "city": "Richardson",
+      "state": "TX",
+      "zip": "75080",
+      "phone": "972-924-9921",
+      "email": "jason.pilgrim@suntecktts.com",
+      "contacts": [
+        "Jason Pilgrim",
+        "Ryan Duffy"
+      ],
+      "services_raw": "IM; TL",
+      "service_modes": [
+        "TL",
+        "IM"
+      ],
+      "latitude": 32.972243,
+      "longitude": -96.72165,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Hall (TX-HA299)",
+      "global_id": "299",
+      "address": "2110 Silent Fox",
+      "city": "San Antonio",
+      "state": "TX",
+      "zip": "782260",
+      "phone": "210-495-9123",
+      "email": "scott.hall@modetransportation.com",
+      "contacts": [
+        "Scott Hall"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 29.727233,
+      "longitude": -98.457006,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Jaimes (TX-JJ)",
+      "global_id": "TX-JJ",
+      "address": "1718 Palmer View",
+      "city": "San Antonio",
+      "state": "TX",
+      "zip": "78260",
+      "phone": "210-764-2222",
+      "email": "jose.jaimes@suntecktts.com",
+      "contacts": [
+        "Jose Jaimes"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Cross Border",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 29.668986,
+      "longitude": -98.462542,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Adams (TX-AD512) (TX-AD217) (713)",
+      "global_id": "512; 217; 713",
+      "address": "11104 W Airport Blvd Ste 205",
+      "city": "Stafford",
+      "state": "TX",
+      "zip": "77477",
+      "phone": "281-919-7400",
+      "email": "stuart.adams@modetransportation.com",
+      "contacts": [
+        "Stuart Adams"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Cross Border; Warehouse",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 29.641182,
+      "longitude": -95.568065,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Cozine (TX-CO605)",
+      "global_id": "425",
+      "address": "19 Troon Drive",
+      "city": "Trophy Club",
+      "state": "TX",
+      "zip": "76262",
+      "phone": "817-688-4432",
+      "email": "tish.cozine@modetransportation.com",
+      "contacts": [
+        "Tish Cozine"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 32.991774,
+      "longitude": -97.180223,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Faulkner (TX-FA519)",
+      "global_id": "(519)  (TX-FA519)",
+      "address": "600 S Valley Mills Drive",
+      "city": "Waco",
+      "state": "TX",
+      "zip": "76711-1156",
+      "phone": "254-495-7080",
+      "email": "randy.faulkner@modetransportation.com",
+      "contacts": [
+        "Randy Faulkner"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 31.526732,
+      "longitude": -97.154551,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Yglecias (TX-JY)",
+      "global_id": "TX-JY",
+      "address": "6707 Alford Drive",
+      "city": "Waco",
+      "state": "TX",
+      "zip": "76710",
+      "phone": "254-424-9349",
+      "email": "johnny.yglecias@suntecktts.com",
+      "contacts": [
+        "Johnny Yglecias"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 31.520964,
+      "longitude": -97.200181,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "TX - Broome (TX-ITX)",
+      "global_id": "TX-ITX",
+      "address": "791 N Hwy 77 Ste 501c-134",
+      "city": "Waxahachie",
+      "state": "TX",
+      "zip": "75165",
+      "phone": "888-527-9426",
+      "email": "alan.broome@suntecktts.com",
+      "contacts": [
+        "Alan Broome"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 32.3808,
+      "longitude": -96.8374,
+      "geocode_method": "zip_centroid",
+      "geocode_approximate": true
+    },
+    {
+      "office_name": "FL- King (FL-KI943)",
+      "global_id": "943",
+      "address": "2216 W Silver Leaf Drive",
+      "city": "Mapleton",
+      "state": "UT",
+      "zip": "84664",
+      "phone": "352-363-2390",
+      "email": "ryan.king@modetransportation.com",
+      "contacts": [
+        "Ryan King"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 40.124962,
+      "longitude": -111.604411,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "VA - Harrison (VA-HA364)",
+      "global_id": "364",
+      "address": "328 Office Square Lane  Suite 204",
+      "city": "Virginia Beach",
+      "state": "VA",
+      "zip": "23462",
+      "phone": "757-490-9318",
+      "email": "lynda.harrison@modetransportation.com",
+      "contacts": [
+        "Lynda Harrison"
+      ],
+      "services_raw": "Air; Ocean",
+      "service_modes": [
+        "Air",
+        "Ocean"
+      ],
+      "latitude": 36.829104,
+      "longitude": -76.160118,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "WA - Yates (WA-SEA)",
+      "global_id": "WA-SEA",
+      "address": "6051 South 194th Street",
+      "city": "Kent",
+      "state": "WA",
+      "zip": "98032",
+      "phone": "253-479-0521",
+      "email": "linda.yates@suntecktts.com",
+      "contacts": [
+        "Linda Yates",
+        "Lonnie Yates"
+      ],
+      "services_raw": "LTL; TL",
+      "service_modes": [
+        "LTL",
+        "TL"
+      ],
+      "latitude": 47.428452,
+      "longitude": -122.261052,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "WA - Cizmar (WA-CI132)",
+      "global_id": "(132) (WA-CI132)",
+      "address": "65 Kirkland Ave #301",
+      "city": "Kirkland",
+      "state": "WA",
+      "zip": "98033",
+      "phone": "206-595-8066",
+      "email": "shay.cizmar@modetransportation.com",
+      "contacts": [
+        "Shay Cizmar"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 47.675363,
+      "longitude": -122.206808,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "WA - Madison (358)",
+      "global_id": "358",
+      "address": "6912 220th Street SW",
+      "city": "Mountlake Terrace",
+      "state": "WA",
+      "zip": "98043",
+      "phone": "425-977-2364",
+      "email": "larry.madison@modetransportation.com",
+      "contacts": [
+        "Larry Madison"
+      ],
+      "services_raw": "IM; LTL; TL; Warehousing: Cross Border",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "IM",
+        "Warehousing"
+      ],
+      "latitude": 47.79952,
+      "longitude": -122.326564,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "WA - Beatty (NY-CB)",
+      "global_id": "NY-CB",
+      "address": "1511 36th Ave South",
+      "city": "Seattle",
+      "state": "WA",
+      "zip": "98144",
+      "phone": "443-784-9288",
+      "email": "chris.beatty@suntecktts.com",
+      "contacts": [
+        "Chris Beatty"
+      ],
+      "services_raw": "TL",
+      "service_modes": [
+        "TL"
+      ],
+      "latitude": 47.588951,
+      "longitude": -122.286894,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "WA - Toldo (WA-SWA)",
+      "global_id": "WA-SWA",
+      "address": "35531 SE English Street",
+      "city": "Snoqualmie",
+      "state": "WA",
+      "zip": "98065",
+      "phone": "425-417-2544",
+      "email": "hope.toldo@suntecktts.com",
+      "contacts": [
+        "Hope Toldo",
+        "Eliza (Liza) Sells"
+      ],
+      "services_raw": "LTL; TL; Warehousing: Carload",
+      "service_modes": [
+        "LTL",
+        "TL",
+        "Warehousing"
+      ],
+      "latitude": 47.535305,
+      "longitude": -121.867067,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "WA - Cook (WA-CO322)",
+      "global_id": "322",
+      "address": "19702 38th Drive NW",
+      "city": "Stanwood",
+      "state": "WA",
+      "zip": "98292",
+      "phone": "206-428-9888",
+      "email": "bob.cook@modetransportation.com",
+      "contacts": [
+        "Bob Cook"
+      ],
+      "services_raw": "IM",
+      "service_modes": [
+        "IM"
+      ],
+      "latitude": 48.174217,
+      "longitude": -122.283482,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "WA - Blumberg (WA-BL114)",
+      "global_id": "114",
+      "address": "8711 NE 109th Ct",
+      "city": "Vancouver",
+      "state": "WA",
+      "zip": "98662",
+      "phone": "360-487-9464",
+      "email": "ross.blumberg@modetransportation.com",
+      "contacts": [
+        "Ross Blumberg"
+      ],
+      "services_raw": "LTL",
+      "service_modes": [
+        "LTL"
+      ],
+      "latitude": 45.678618,
+      "longitude": -122.561066,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    },
+    {
+      "office_name": "WI - Ferraro (WI-FE502)",
+      "global_id": "502",
+      "address": "300 Lakewood Blvd",
+      "city": "Madison",
+      "state": "WI",
+      "zip": "53704",
+      "phone": "608-239-3305",
+      "email": "rob.ferraro@modetransportation.com",
+      "contacts": [
+        "Rob Ferraro"
+      ],
+      "services_raw": "LTL",
+      "service_modes": [
+        "LTL"
+      ],
+      "latitude": 43.109856,
+      "longitude": -89.367572,
+      "geocode_method": "street",
+      "geocode_approximate": false
+    }
+  ]
+}
