@@ -1,123 +1,130 @@
-# Power BI Export Guide — MODE Carrier Engagement Analytics
+# Power BI Export Guide — MODE IQ Analytics
 
-This guide tells the carrier engagement team how to export load data from Power BI and upload it to the MODE Office Map so each office's analytics panel shows live match rates and lane activity.
+## How to export from Power BI
 
----
-
-## What Gets Shown on the Map
-
-When an office pin is clicked, the map shows:
-- **Match Rate** — % of posted loads that found a carrier (color-coded: green ≥80%, yellow ≥60%, red <60%)
-- **Loads Posted** — total load count in the dataset
-- **Avg Rate** — average linehaul rate across matched loads
-- **Top 5 Lanes** — highest-volume origin → destination state pairs
-- **Monthly Trend** — match rate by month (most recent 12 months)
+1. Open your load data report in Power BI
+2. Click **Export data** (the ... menu on any table visual)
+3. Choose **Summarized data** or **Underlying data** → **CSV**
+4. Save the file
+5. Upload via: `POST https://mode-office-locations.netlify.app/api/upload`
 
 ---
 
-## Step 1 — Export from Power BI
+## Required CSV Columns
 
-Export a CSV or JSON from your Power BI load-matching report. The upload endpoint accepts flexible column names, but the following columns are **required**:
+The API is flexible with column names — use any of the aliases listed below.
 
-| Column | Required | Accepted names |
-|---|---|---|
-| Office identifier | **YES** | `office_id`, `officeid`, `office_name`, `office` |
-| Match status | **YES** | `match_status`, `matchstatus`, `status`, `match` |
-| Origin state | **YES** | `origin_state`, `originstate`, `origin`, `from_state` |
-| Destination state | **YES** | `dest_state`, `deststate`, `destination`, `to_state` |
-| Load ID | no | `load_id`, `loadid`, `load`, `shipment_id` |
-| Posted date | no* | `posted_date`, `posteddate`, `date`, `load_date` |
-| Rate (USD) | no | `rate`, `rate_usd`, `linehaul`, `amount` |
-| Miles | no | `miles`, `distance`, `mileage` |
-| Equipment type | no | `equipment`, `equip`, `equipment_type` |
-| Carrier name | no | `carrier_name`, `carriername`, `carrier` |
-| Customer / shipper | no | `customer`, `customer_name`, `shipper` |
+| Data Point | Accepted Column Names |
+|---|---|
+| Office identifier | `office_id`, `branch_id`, `location_id` |
+| Office name | `office_name`, `branch_name`, `location_name` |
+| Load number | `load_id`, `load_number`, `load_#` |
+| Post date | `posted_date`, `date_posted`, `date`, `post_date` |
+| Origin city | `origin_city`, `pickup_city` |
+| Origin state | `origin_state`, `pickup_state` |
+| Destination city | `dest_city`, `destination_city`, `delivery_city` |
+| Destination state | `dest_state`, `destination_state`, `delivery_state` |
+| Equipment type | `equipment`, `equipment_type`, `equip` |
+| Match status | `match_status`, `matched`, `status` → values: `Matched`/`Unmatched` or `Yes`/`No` |
+| Carrier name | `carrier_name`, `carrier` |
+| Carrier MC# | `carrier_mc`, `mc_number` |
+| Rate | `rate`, `load_rate`, `buy_rate` → dollar amount, `$` and commas are stripped |
+| Miles | `miles`, `distance_miles`, `mileage` |
+| Customer | `customer`, `customer_name`, `shipper` |
 
-*\* `posted_date` is needed for the monthly trend chart. Format: `YYYY-MM-DD`.*
-
-### Accepted match_status values
-A load is counted as **matched** if the status is (case-insensitive): `matched`, `covered`, `booked`, `awarded`, or `tendered`. All other values count as unmatched.
-
-### Office ID matching
-The `office_id` (or `office_name`) in your export must match the **ID field** shown on each office's detail card on the map (e.g., `923; 366`, `AL-DM`, `TX-DA201`). Work with the tech team to confirm the mapping once before the first upload.
+### Minimum viable export (must have at least these)
+- `office_id` or `office_name`
+- `match_status`
+- `origin_state` + `dest_state`
 
 ---
 
-## Step 2 — Upload to the Map
+## Example CSV
 
-### Option A — Curl (one-liner for automation)
+```
+office_id,office_name,load_id,posted_date,origin_city,origin_state,dest_city,dest_state,equipment,match_status,carrier_name,carrier_mc,rate,miles,customer
+TX-DA201,Dallas - Smith,2401001,2026-05-01,Dallas,TX,Chicago,IL,Dry Van,Matched,ABC Transport,MC-123456,$2400,920,Acme Corp
+TX-DA201,Dallas - Smith,2401002,2026-05-01,Fort Worth,TX,Memphis,TN,Reefer,Unmatched,,,,,XYZ Foods
+IL-CH055,Chicago - Jones,2401003,2026-05-02,Chicago,IL,Detroit,MI,Flatbed,Matched,DEF Trucking,MC-789012,$1800,310,Widget Co
+```
 
+---
+
+## Upload API
+
+### Replace all data (fresh upload)
 ```bash
-# Replace mode (default) — clears previous data, loads fresh batch
 curl -X POST https://mode-office-locations.netlify.app/api/upload \
   -H "Content-Type: text/csv" \
-  -H "X-Upload-Secret: YOUR_SECRET_HERE" \
-  --data-binary @/path/to/export.csv
+  -H "X-Upload-Secret: YOUR_SECRET" \
+  --data-binary @your_export.csv
+```
 
-# Append mode — merges with existing history, keeps all prior months
+### Append to existing data
+```bash
 curl -X POST "https://mode-office-locations.netlify.app/api/upload?mode=append" \
   -H "Content-Type: text/csv" \
-  -H "X-Upload-Secret: YOUR_SECRET_HERE" \
-  --data-binary @/path/to/export.csv
+  -H "X-Upload-Secret: YOUR_SECRET" \
+  --data-binary @your_export.csv
 ```
 
-For JSON instead of CSV, change the Content-Type header:
+### Upload JSON instead of CSV
 ```bash
--H "Content-Type: application/json"
+curl -X POST https://mode-office-locations.netlify.app/api/upload \
+  -H "Content-Type: application/json" \
+  -H "X-Upload-Secret: YOUR_SECRET" \
+  -d '[{"office_id":"TX-DA201","match_status":"Matched",...}]'
 ```
 
-The JSON body should be an array of objects, one per load row.
+---
 
-### Option B — Power BI Scheduled Export + Webhook
-Power BI Dataflows can call an HTTP endpoint on a schedule. Configure a Dataflow to POST the export to the upload URL above on a weekly or monthly schedule.
+## Netlify Environment Variables to Set
 
-### Option C — Manual upload via a form (future)
-A drag-and-drop upload form is planned for a future version. For now, use curl or the scheduled export.
+In Netlify dashboard → Site → Environment variables:
+
+| Variable | Value | Required |
+|---|---|---|
+| `UPLOAD_SECRET` | Any strong secret string | Recommended — omit to allow unauthenticated uploads |
 
 ---
 
-## Step 3 — Verify the Upload
+## API Responses
 
-```bash
-# Check the last upload timestamp and record counts
-curl https://mode-office-locations.netlify.app/api/health
-
-# View all office stats (summary view)
-curl https://mode-office-locations.netlify.app/api/office-stats
-
-# Check a specific office (use the office_id from the map)
-curl https://mode-office-locations.netlify.app/api/office-stats/TX-DA201
+### GET /api/health
+```json
+{ "ok": true, "store": "mode-iq-analytics", "meta": { "last_upload": "2026-06-03T...", "records_ingested": 450 } }
 ```
 
-The map's analytics panels update immediately on the next page load after a successful upload.
+### GET /api/office-stats
+Returns all offices with aggregated stats:
+```json
+{
+  "offices": {
+    "TX-DA201": {
+      "office_id": "TX-DA201",
+      "office_name": "Dallas - Smith",
+      "total": 142,
+      "matched": 118,
+      "unmatched": 24,
+      "match_rate": 83,
+      "avg_rate": 2310,
+      "avg_miles": 740,
+      "top_lanes": [
+        { "orig": "TX", "dest": "IL", "count": 22 },
+        { "orig": "TX", "dest": "TN", "count": 18 }
+      ],
+      "top_carriers": [
+        { "name": "ABC Transport", "count": 14 }
+      ],
+      "monthly_trend": [
+        { "month": "2026-04", "count": 68 },
+        { "month": "2026-05", "count": 74 }
+      ],
+      "equipment": { "Dry Van": 98, "Reefer": 44 }
+    }
+  }
+}
+```
 
----
-
-## Data Retention
-
-- **Replace mode** (default): each upload wipes the previous dataset. Use this for month-end snapshots where you want a clean slate.
-- **Append mode** (`?mode=append`): merges the new batch with all previous uploads. Monthly trend history accumulates across uploads. Use this for incremental weekly updates.
-
-The `api/health` endpoint shows how many append operations have been applied since the last replace.
-
----
-
-## Security
-
-The upload endpoint is protected by a secret key (`X-Upload-Secret` header). Get this key from the Netlify dashboard under:
-
-> **Netlify Dashboard** → mode-office-locations site → **Site configuration** → **Environment variables** → `UPLOAD_SECRET`
-
-If no secret is configured, the endpoint is open. Always configure a secret before sharing the upload URL with external tools.
-
----
-
-## Troubleshooting
-
-| Symptom | Fix |
-|---|---|
-| `401 Unauthorized` | Check your `X-Upload-Secret` header matches the Netlify env var |
-| `400 No valid records` | Verify your CSV has an `office_id` or `office_name` column |
-| Office shows "No analytics data" on map | The `office_id` in your export doesn't match the map's ID — compare with the detail card |
-| Match rate seems wrong | Check that your `match_status` values are one of: matched, covered, booked, awarded, tendered |
-| Monthly trend is blank | Add a `posted_date` column in `YYYY-MM-DD` format |
+### GET /api/office-stats/:office_id
+Same structure as above but for a single office.

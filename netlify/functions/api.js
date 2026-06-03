@@ -1,378 +1,380 @@
-import { getStore } from '@netlify/blobs';
+// MODE IQ Office Analytics — Netlify Function backend
+// Ingests Power BI CSV exports and serves per-office load stats
+
+const { getStore } = require('@netlify/blobs');
 
 const STORE_NAME = 'mode-iq-analytics';
+const UPLOAD_SECRET = process.env.UPLOAD_SECRET || '';
 
-// ── CSV parser ──────────────────────────────────────────────────────────────
+// ─── helpers ────────────────────────────────────────────────────────────────
 
-function parseCsv(text) {
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+function json(body, status = 200) {
+  return {
+    statusCode: status,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify(body),
+  };
+}
 
-  function parseLine(line) {
+function store() {
+  return getStore({ name: STORE_NAME, consistency: 'strong' });
+}
+
+// Parse a CSV string into array of objects using first row as headers.
+// Handles quoted fields with commas inside.
+function parseCSV(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n');
+  if (lines.length < 2) return [];
+
+  const parseLine = (line) => {
     const fields = [];
-    let cur = '';
-    let inQ = false;
+    let cur = '', inQ = false;
     for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (inQ) {
-        if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-        else if (c === '"') inQ = false;
-        else cur += c;
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQ = !inQ;
+      } else if (ch === ',' && !inQ) {
+        fields.push(cur.trim()); cur = '';
       } else {
-        if (c === '"') inQ = true;
-        else if (c === ',') { fields.push(cur); cur = ''; }
-        else cur += c;
+        cur += ch;
       }
     }
-    fields.push(cur);
+    fields.push(cur.trim());
     return fields;
-  }
+  };
 
-  if (!lines[0]?.trim()) return [];
-  const headers = parseLine(lines[0]).map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+  const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''));
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
     const vals = parseLine(lines[i]);
-    const row = {};
-    headers.forEach((h, j) => { row[h] = (vals[j] || '').trim(); });
-    rows.push(row);
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = vals[idx] || ''; });
+    rows.push(obj);
   }
   return rows;
 }
 
-// ── Flexible column normalizer ──────────────────────────────────────────────
-
-function normalizeRow(row) {
-  const find = (...names) => {
-    for (const n of names) if (row[n] !== undefined && row[n] !== '') return row[n];
+// Normalise a raw Power BI row into our internal load record.
+// Column names are flexible — we try several aliases for each field.
+function normaliseRow(row) {
+  const g = (...keys) => {
+    for (const k of keys) {
+      const v = row[k] || row[k.replace(/_/g, ' ')] || '';
+      if (v) return v.trim();
+    }
     return '';
   };
+
+  const matchRaw = g('match_status', 'matched', 'status', 'load_status').toLowerCase();
+  const matched =
+    matchRaw === 'matched' || matchRaw === 'covered' || matchRaw === 'booked' ||
+    matchRaw === 'awarded' || matchRaw === 'tendered' ||
+    matchRaw === 'yes' || matchRaw === 'true' || matchRaw === '1'
+      ? true
+      : matchRaw === 'unmatched' || matchRaw === 'no' || matchRaw === 'false' || matchRaw === '0'
+      ? false
+      : null;
+
+  const rateRaw = g('rate', 'load_rate', 'total_rate', 'buy_rate').replace(/[$,\s]/g, '');
+  const rate = parseFloat(rateRaw) || null;
+
+  const milesRaw = g('miles', 'distance_miles', 'distance', 'mileage').replace(/[,\s]/g, '');
+  const miles = parseFloat(milesRaw) || null;
+
   return {
-    office_id:   find('office_id', 'officeid', 'office_id_', 'id'),
-    office_name: find('office_name', 'officename', 'office', 'office_label'),
-    match_status: find('match_status', 'matchstatus', 'status', 'match'),
-    origin_state: find('origin_state', 'originstate', 'origin', 'orig_state', 'from_state'),
-    dest_state:  find('dest_state', 'deststate', 'destination', 'dest', 'to_state'),
-    load_id:     find('load_id', 'loadid', 'load', 'shipment_id'),
-    posted_date: find('posted_date', 'posteddate', 'date', 'post_date', 'load_date'),
-    rate:        find('rate', 'rate_usd', 'linehaul', 'amount', 'price'),
-    miles:       find('miles', 'distance', 'mileage', 'total_miles'),
-    equipment:   find('equipment', 'equip', 'equipment_type', 'trailer_type'),
-    carrier_name: find('carrier_name', 'carriername', 'carrier', 'scac'),
-    customer:    find('customer', 'customer_name', 'shipper', 'account'),
+    load_id:       g('load_id', 'load_number', 'load_#', 'loadid', 'id'),
+    office_id:     g('office_id', 'office', 'branch_id', 'branch', 'location_id', 'location'),
+    office_name:   g('office_name', 'branch_name', 'location_name'),
+    posted_date:   g('posted_date', 'date_posted', 'date', 'post_date'),
+    origin_city:   g('origin_city', 'pickup_city', 'origin'),
+    origin_state:  g('origin_state', 'pickup_state', 'o_state'),
+    dest_city:     g('dest_city', 'destination_city', 'delivery_city', 'destination'),
+    dest_state:    g('dest_state', 'destination_state', 'delivery_state', 'd_state'),
+    equipment:     g('equipment', 'equipment_type', 'equip', 'mode'),
+    matched,
+    carrier_name:  g('carrier_name', 'carrier', 'assigned_carrier'),
+    carrier_mc:    g('carrier_mc', 'mc_number', 'mc'),
+    rate,
+    miles,
+    customer:      g('customer', 'customer_name', 'shipper'),
   };
 }
 
-// ── Stats computation ───────────────────────────────────────────────────────
+// Derive top_lanes, top_carriers, monthly_trend summaries from raw dicts.
+function summarise(o) {
+  o.match_rate = o.total ? Math.round((o.matched / o.total) * 100) : 0;
+  o.avg_rate   = o._rates_n ? Math.round(o._rates_sum / o._rates_n) : null;
+  o.avg_miles  = o._miles_n ? Math.round(o._miles_sum / o._miles_n) : null;
 
-const MATCHED_STATUSES = new Set(['matched', 'covered', 'booked', 'awarded', 'tendered']);
+  o.top_lanes = Object.entries(o._lanes || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([lane, count]) => {
+      const [orig, dest] = lane.split('→');
+      return { orig, dest, count };
+    });
 
-function computeOfficeStats(records) {
-  // Returns map of office_id → raw aggregates
-  const raw = {};
+  o.top_carriers = Object.entries(o._carriers || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count }));
+
+  o.monthly_trend = Object.entries(o._by_month || {})
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([month, count]) => ({ month, count }));
+
+  o.equipment = o._equipment || {};
+}
+
+// Aggregate normalised load records into per-office stats object.
+// Raw accumulator dicts (_lanes, _carriers, _by_month, _equipment) are kept
+// on each office so append mode can merge them across uploads.
+function computeStats(records) {
+  const offices = {};
 
   for (const r of records) {
-    const id = (r.office_id || r.office_name || '').trim();
-    if (!id) continue;
-
-    if (!raw[id]) {
-      raw[id] = {
-        office_id: id,
-        office_name: r.office_name || id,
-        total: 0,
-        matched: 0,
-        rate_sum: 0,
-        rate_count: 0,
-        lane_counts: {},   // "OR → CA": n
-        monthly_raw: {},   // "2026-01": { total, matched }
+    const key = r.office_id || r.office_name || 'unknown';
+    if (!offices[key]) {
+      offices[key] = {
+        office_id:   r.office_id,
+        office_name: r.office_name,
+        total:       0,
+        matched:     0,
+        unmatched:   0,
+        unknown:     0,
+        _rates_sum:  0,
+        _rates_n:    0,
+        _miles_sum:  0,
+        _miles_n:    0,
+        _lanes:      {},
+        _equipment:  {},
+        _by_month:   {},
+        _carriers:   {},
       };
     }
 
-    const s = raw[id];
-    s.total++;
+    const o = offices[key];
+    o.total++;
 
-    const status = (r.match_status || '').toLowerCase().trim();
-    if (MATCHED_STATUSES.has(status)) s.matched++;
+    if (r.matched === true)       o.matched++;
+    else if (r.matched === false) o.unmatched++;
+    else                          o.unknown++;
 
-    const rate = parseFloat(r.rate);
-    if (!isNaN(rate) && rate > 0) { s.rate_sum += rate; s.rate_count++; }
+    if (r.rate)  { o._rates_sum += r.rate;  o._rates_n++; }
+    if (r.miles) { o._miles_sum += r.miles; o._miles_n++; }
 
-    const orig = (r.origin_state || '').trim().toUpperCase();
-    const dest = (r.dest_state || '').trim().toUpperCase();
-    if (orig && dest) {
-      const lane = `${orig} → ${dest}`;
-      s.lane_counts[lane] = (s.lane_counts[lane] || 0) + 1;
+    if (r.origin_state && r.dest_state) {
+      const lane = `${r.origin_state.toUpperCase()}→${r.dest_state.toUpperCase()}`;
+      o._lanes[lane] = (o._lanes[lane] || 0) + 1;
     }
 
-    const dateStr = (r.posted_date || '').trim();
-    const month = dateStr.length >= 7 ? dateStr.substring(0, 7) : null; // YYYY-MM
-    if (month && /^\d{4}-\d{2}$/.test(month)) {
-      const m = s.monthly_raw[month] || (s.monthly_raw[month] = { total: 0, matched: 0 });
-      m.total++;
-      if (MATCHED_STATUSES.has(status)) m.matched++;
+    if (r.equipment) {
+      const eq = r.equipment.trim();
+      o._equipment[eq] = (o._equipment[eq] || 0) + 1;
+    }
+
+    if (r.posted_date) {
+      let mo = '';
+      const iso = r.posted_date.match(/^(\d{4}-\d{2})/);
+      const mdy = r.posted_date.match(/^(\d{1,2})\/\d{1,2}\/(\d{4})/);
+      if (iso)      mo = iso[1];
+      else if (mdy) mo = `${mdy[2]}-${mdy[1].padStart(2, '0')}`;
+      if (mo) o._by_month[mo] = (o._by_month[mo] || 0) + 1;
+    }
+
+    if (r.carrier_name) {
+      const cn = r.carrier_name.trim();
+      o._carriers[cn] = (o._carriers[cn] || 0) + 1;
     }
   }
 
-  return raw;
+  for (const o of Object.values(offices)) {
+    summarise(o);
+  }
+
+  return offices;
 }
 
-function deriveDisplayFields(raw) {
-  const top_lanes = Object.entries(raw.lane_counts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([lane, count]) => ({ lane, count }));
-
-  const monthly = Object.entries(raw.monthly_raw)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([month, m]) => ({
-      month,
-      total: m.total,
-      matched: m.matched,
-      rate: m.total ? Math.round(m.matched / m.total * 100) : 0,
-    }));
-
-  return {
-    office_id: raw.office_id,
-    office_name: raw.office_name,
-    total_loads: raw.total,
-    matched_loads: raw.matched,
-    match_rate: raw.total ? Math.round(raw.matched / raw.total * 100) : 0,
-    avg_rate: raw.rate_count ? Math.round(raw.rate_sum / raw.rate_count) : null,
-    top_lanes,
-    monthly,
-    // underscore-prefixed fields survive for future merges
-    _rate_sum: raw.rate_sum,
-    _rate_count: raw.rate_count,
-    _lane_counts: raw.lane_counts,
-    _monthly_raw: raw.monthly_raw,
+// Merge a fresh office record on top of existing (append mode).
+// Merges raw dicts so lane/carrier/monthly history truly accumulates.
+function mergeOffice(existing, fresh) {
+  const merged = {
+    office_id:   fresh.office_id   || existing.office_id,
+    office_name: fresh.office_name || existing.office_name,
+    total:     existing.total     + fresh.total,
+    matched:   existing.matched   + fresh.matched,
+    unmatched: existing.unmatched + fresh.unmatched,
+    unknown:   existing.unknown   + fresh.unknown,
+    _rates_sum: (existing._rates_sum || 0) + (fresh._rates_sum || 0),
+    _rates_n:   (existing._rates_n   || 0) + (fresh._rates_n   || 0),
+    _miles_sum: (existing._miles_sum || 0) + (fresh._miles_sum || 0),
+    _miles_n:   (existing._miles_n   || 0) + (fresh._miles_n   || 0),
+    _lanes:     { ...(existing._lanes || {}) },
+    _equipment: { ...(existing._equipment || {}) },
+    _by_month:  { ...(existing._by_month || {}) },
+    _carriers:  { ...(existing._carriers || {}) },
   };
-}
 
-function mergeInto(existing, incoming) {
-  // Merge two raw aggregate objects in-place into existing
-  existing.total += incoming.total;
-  existing.matched += incoming.matched;
-  existing.rate_sum += incoming.rate_sum;
-  existing.rate_count += incoming.rate_count;
-
-  for (const [lane, cnt] of Object.entries(incoming.lane_counts)) {
-    existing.lane_counts[lane] = (existing.lane_counts[lane] || 0) + cnt;
+  for (const [k, v] of Object.entries(fresh._lanes || {})) {
+    merged._lanes[k] = (merged._lanes[k] || 0) + v;
+  }
+  for (const [k, v] of Object.entries(fresh._equipment || {})) {
+    merged._equipment[k] = (merged._equipment[k] || 0) + v;
+  }
+  for (const [k, v] of Object.entries(fresh._by_month || {})) {
+    merged._by_month[k] = (merged._by_month[k] || 0) + v;
+  }
+  for (const [k, v] of Object.entries(fresh._carriers || {})) {
+    merged._carriers[k] = (merged._carriers[k] || 0) + v;
   }
 
-  for (const [month, m] of Object.entries(incoming.monthly_raw)) {
-    const ex = existing.monthly_raw[month] || (existing.monthly_raw[month] = { total: 0, matched: 0 });
-    ex.total += m.total;
-    ex.matched += m.matched;
-  }
+  summarise(merged);
+  return merged;
 }
 
-// ── Blob helpers ────────────────────────────────────────────────────────────
+// ─── route handler ───────────────────────────────────────────────────────────
 
-async function loadStats(store) {
-  const raw = await store.get('all-office-stats', { type: 'json' }).catch(() => null);
-  return raw || {};
-}
+exports.handler = async (event) => {
+  const { httpMethod: method, path, body, headers, queryStringParameters: qs } = event;
+  const seg = path.replace(/^\/\.netlify\/functions\/api\/?/, '').replace(/^\/api\/?/, '').split('/').filter(Boolean);
+  const route = seg[0] || '';
+  const param = seg[1] || '';
 
-async function saveStats(store, stats) {
-  await store.set('all-office-stats', JSON.stringify(stats));
-}
-
-async function loadMeta(store) {
-  const raw = await store.get('meta', { type: 'json' }).catch(() => null);
-  return raw || {};
-}
-
-async function saveMeta(store, meta) {
-  await store.set('meta', JSON.stringify(meta));
-}
-
-// ── Auth ────────────────────────────────────────────────────────────────────
-
-function isAuthorized(req) {
-  const secret = process.env.UPLOAD_SECRET;
-  if (!secret) return true;
-  const header = req.headers.get('x-upload-secret') || req.headers.get('authorization') || '';
-  return header === secret || header === `Bearer ${secret}`;
-}
-
-// ── Handler ─────────────────────────────────────────────────────────────────
-
-const JSON_HEADERS = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Upload-Secret, Authorization',
-  'Cache-Control': 'no-store',
-};
-
-export default async (req, context) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: JSON_HEADERS });
+  if (method === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Upload-Secret',
+      },
+      body: '',
+    };
   }
 
-  const url = new URL(req.url);
-  // pathname: /api/office-stats/TX-123  →  parts after /api/
-  const parts = url.pathname.replace(/^\/+api\/?/, '').split('/').filter(Boolean);
-  const endpoint = parts[0] || '';
-  const param = parts.slice(1).join('/');
-  const method = req.method;
+  // GET /api/health
+  if (method === 'GET' && route === 'health') {
+    const s = store();
+    let meta = null;
+    try { meta = JSON.parse(await s.get('meta') || 'null'); } catch {}
+    return json({ ok: true, store: STORE_NAME, meta });
+  }
 
-  const store = getStore(STORE_NAME);
+  // GET /api/office-stats  — all offices summary for map overlay
+  if (method === 'GET' && route === 'office-stats' && !param) {
+    const s = store();
+    try {
+      const raw = await s.get('all-office-stats');
+      if (!raw) return json({ offices: {}, message: 'No data uploaded yet.' });
+      return json({ offices: JSON.parse(raw) });
+    } catch (e) {
+      return json({ error: e.message }, 500);
+    }
+  }
 
-  try {
-    // GET /api/health
-    if (method === 'GET' && endpoint === 'health') {
-      const meta = await loadMeta(store);
-      return Response.json({
-        status: 'ok',
-        last_upload: meta.last_upload || null,
-        record_count: meta.record_count || 0,
-        office_count: meta.office_count || 0,
-        append_count: meta.append_count || 0,
-      }, { headers: JSON_HEADERS });
+  // GET /api/office-stats/:id  — single office detail
+  if (method === 'GET' && route === 'office-stats' && param) {
+    const s = store();
+    try {
+      const raw = await s.get('all-office-stats');
+      if (!raw) return json({ error: 'No data uploaded yet.' }, 404);
+      const all = JSON.parse(raw);
+      const id = decodeURIComponent(param).toLowerCase();
+      const match = Object.values(all).find(
+        o => (o.office_id || '').toLowerCase() === id ||
+             (o.office_name || '').toLowerCase() === id
+      );
+      if (!match) return json({ error: `Office "${param}" not found.` }, 404);
+      return json(match);
+    } catch (e) {
+      return json({ error: e.message }, 500);
+    }
+  }
+
+  // POST /api/upload  — ingest Power BI CSV export
+  if (method === 'POST' && route === 'upload') {
+    if (UPLOAD_SECRET) {
+      const provided = headers['x-upload-secret'] || headers['authorization']?.replace(/^Bearer\s+/, '') || (qs && qs.secret) || '';
+      if (provided !== UPLOAD_SECRET) return json({ error: 'Unauthorized' }, 401);
     }
 
-    // GET /api/office-stats  (all offices summary)
-    if (method === 'GET' && endpoint === 'office-stats' && !param) {
-      const stored = await loadStats(store);
-      // Return display-only fields (strip underscore fields)
-      const summary = {};
-      for (const [id, s] of Object.entries(stored)) {
-        summary[id] = {
-          office_id: s.office_id,
-          office_name: s.office_name,
-          total_loads: s.total_loads,
-          matched_loads: s.matched_loads,
-          match_rate: s.match_rate,
-          avg_rate: s.avg_rate,
-        };
+    if (!body) return json({ error: 'No body provided.' }, 400);
+
+    let records = [];
+    const ct = (headers['content-type'] || '').toLowerCase();
+
+    if (ct.includes('application/json')) {
+      try {
+        const parsed = JSON.parse(body);
+        const arr = Array.isArray(parsed) ? parsed : parsed.data || parsed.records || parsed.rows || [];
+        records = arr.map(normaliseRow);
+      } catch (e) {
+        return json({ error: 'Invalid JSON: ' + e.message }, 400);
       }
-      return Response.json(summary, { headers: JSON_HEADERS });
+    } else {
+      try {
+        const rows = parseCSV(body);
+        if (!rows.length) return json({ error: 'CSV is empty or has no data rows.' }, 400);
+        records = rows.map(normaliseRow);
+      } catch (e) {
+        return json({ error: 'CSV parse error: ' + e.message }, 400);
+      }
     }
 
-    // GET /api/office-stats/:id  (single office drill-down)
-    if (method === 'GET' && endpoint === 'office-stats' && param) {
-      const stored = await loadStats(store);
-      const id = decodeURIComponent(param);
-      const office = stored[id];
-      if (!office) {
-        return Response.json({ error: 'Not found', office_id: id }, { status: 404, headers: JSON_HEADERS });
-      }
-      // Return full details, strip internal merge fields
-      const { _rate_sum, _rate_count, _lane_counts, _monthly_raw, ...display } = office;
-      return Response.json(display, { headers: JSON_HEADERS });
+    if (!records.length) return json({ error: 'No records parsed from upload.' }, 400);
+
+    const s = store();
+    const mode = (qs && qs.mode) || 'replace';
+    let existing = {};
+    if (mode === 'append') {
+      try {
+        const raw = await s.get('all-office-stats');
+        if (raw) existing = JSON.parse(raw);
+      } catch {}
     }
 
-    // POST /api/upload
-    if (method === 'POST' && endpoint === 'upload') {
-      if (!isAuthorized(req)) {
-        return Response.json({ error: 'Unauthorized' }, { status: 401, headers: JSON_HEADERS });
-      }
+    const fresh = computeStats(records);
 
-      const mode = url.searchParams.get('mode') || 'replace'; // 'replace' | 'append'
-      const contentType = req.headers.get('content-type') || '';
-
-      // Parse incoming records
-      let normalizedRows;
-      if (contentType.includes('application/json')) {
-        const body = await req.json();
-        const arr = Array.isArray(body) ? body : (body.records || body.data || [body]);
-        normalizedRows = arr.map(normalizeRow);
+    let merged = { ...existing };
+    for (const [key, stats] of Object.entries(fresh)) {
+      if (mode === 'append' && merged[key]) {
+        merged[key] = mergeOffice(merged[key], stats);
       } else {
-        const text = await req.text();
-        normalizedRows = parseCsv(text).map(normalizeRow);
+        merged[key] = stats;
       }
-
-      const validRows = normalizedRows.filter(r => r.office_id || r.office_name);
-      if (!validRows.length) {
-        return Response.json({ error: 'No valid records — each row needs office_id or office_name' }, { status: 400, headers: JSON_HEADERS });
-      }
-
-      // Compute raw aggregates for incoming batch
-      const incomingRaw = computeOfficeStats(validRows);
-
-      let finalStats;
-      let appendCount = 0;
-
-      if (mode === 'append') {
-        // Load existing stored stats and merge
-        const existingStored = await loadStats(store);
-        const mergedRaw = {};
-
-        // Start from existing, reconstructing raw aggregate shape
-        for (const [id, s] of Object.entries(existingStored)) {
-          mergedRaw[id] = {
-            office_id: s.office_id,
-            office_name: s.office_name,
-            total: s.total_loads || 0,
-            matched: s.matched_loads || 0,
-            rate_sum: s._rate_sum || 0,
-            rate_count: s._rate_count || 0,
-            lane_counts: s._lane_counts || {},
-            monthly_raw: s._monthly_raw || {},
-          };
-        }
-
-        // Merge incoming into existing
-        for (const [id, incoming] of Object.entries(incomingRaw)) {
-          if (mergedRaw[id]) {
-            mergeInto(mergedRaw[id], incoming);
-          } else {
-            mergedRaw[id] = incoming;
-          }
-        }
-
-        finalStats = {};
-        for (const [id, raw] of Object.entries(mergedRaw)) {
-          finalStats[id] = deriveDisplayFields(raw);
-        }
-
-        const existingMeta = await loadMeta(store);
-        appendCount = (existingMeta.append_count || 0) + 1;
-      } else {
-        // Replace: discard existing data
-        finalStats = {};
-        for (const [id, raw] of Object.entries(incomingRaw)) {
-          finalStats[id] = deriveDisplayFields(raw);
-        }
-        appendCount = 0;
-      }
-
-      await saveStats(store, finalStats);
-      await saveMeta(store, {
-        last_upload: new Date().toISOString(),
-        upload_mode: mode,
-        record_count: validRows.length,
-        office_count: Object.keys(finalStats).length,
-        append_count: appendCount,
-      });
-
-      return Response.json({
-        ok: true,
-        mode,
-        records_processed: validRows.length,
-        offices: Object.keys(finalStats).length,
-      }, { headers: JSON_HEADERS });
     }
 
-    // POST /api/clear
-    if (method === 'POST' && endpoint === 'clear') {
-      if (!isAuthorized(req)) {
-        return Response.json({ error: 'Unauthorized' }, { status: 401, headers: JSON_HEADERS });
-      }
-      await store.delete('all-office-stats').catch(() => null);
-      await store.delete('meta').catch(() => null);
-      return Response.json({ ok: true, cleared: true }, { headers: JSON_HEADERS });
-    }
+    await s.set('all-office-stats', JSON.stringify(merged));
 
-    return Response.json({ error: `Unknown route: ${method} /api/${endpoint}` }, { status: 404, headers: JSON_HEADERS });
+    const meta = {
+      last_upload: new Date().toISOString(),
+      mode,
+      records_ingested: records.length,
+      offices_affected: Object.keys(fresh).length,
+      total_offices:    Object.keys(merged).length,
+    };
+    await s.set('meta', JSON.stringify(meta));
 
-  } catch (err) {
-    console.error('[mode-iq-api]', err);
-    return Response.json({ error: err.message || 'Internal server error' }, { status: 500, headers: JSON_HEADERS });
+    return json({
+      ok: true,
+      records_ingested: records.length,
+      offices_affected: Object.keys(fresh).length,
+      total_offices:    Object.keys(merged).length,
+    });
   }
-};
 
-export const config = {
-  path: '/api/:rest*',
+  // POST /api/clear  — wipe all data (requires secret)
+  if (method === 'POST' && route === 'clear') {
+    if (!UPLOAD_SECRET) return json({ error: 'UPLOAD_SECRET must be set to use /clear.' }, 403);
+    const provided = headers['x-upload-secret'] || (qs && qs.secret) || '';
+    if (provided !== UPLOAD_SECRET) return json({ error: 'Unauthorized' }, 401);
+    const s = store();
+    await s.delete('all-office-stats');
+    await s.delete('meta');
+    return json({ ok: true, message: 'All analytics data cleared.' });
+  }
+
+  return json({ error: `Unknown route: ${route || '/'}` }, 404);
 };
