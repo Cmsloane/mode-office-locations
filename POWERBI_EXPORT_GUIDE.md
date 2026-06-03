@@ -1,52 +1,64 @@
 # Power BI Export Guide — MODE IQ Analytics
 
-## How to export from Power BI
+## Supported Export Formats
 
-1. Open your load data report in Power BI
-2. Click **Export data** (the ... menu on any table visual)
-3. Choose **Summarized data** or **Underlying data** → **CSV**
-4. Save the file
-5. Upload via: `POST https://mode-office-locations.netlify.app/api/upload`
+The API accepts **two CSV formats** depending on which Power BI report you export from:
 
 ---
 
-## Required CSV Columns
+### Format A — Lane Performance Report (recommended)
+This is the standard MODE Power BI lane report. Each row is a lane + carrier combination with aggregated volume, revenue, and profit data.
 
-The API is flexible with column names — use any of the aliases listed below.
+**Required columns** (exact names from Power BI):
 
-| Data Point | Accepted Column Names |
+| Column | Notes |
+|---|---|
+| `IBO` | Office identifier (e.g. `TX-SA217`). Rows with the same numeric suffix are merged into one map pin. |
+| `IBO Group Name` | Office group name (e.g. `HOUSTON, TX - ADAMS`) |
+| `Lane` | Format: `ORIGIN CITY STATE COUNTRY - DEST CITY STATE COUNTRY` (e.g. `JACKSON TN US - LAREDO TX US`) |
+| `Volume` | Number of loads this lane+carrier row represents |
+| `Avg Revenue` | Average revenue per load (dollar amount, `$` and commas are stripped) |
+| `Profit %` | Profit margin percentage (e.g. `18.97%`) |
+| `Carrier Name Column` | Carrier name |
+| `Customer` | Customer/shipper name |
+
+**Map display** (for this format):
+- Primary KPI: **Profit Margin** (green ≥20%, yellow ≥12%, red <12%)
+- Loads: sum of `Volume` column
+- Avg Revenue: weighted average of `Avg Revenue` × `Volume`
+- Top Lanes: highest-volume origin→destination state pairs
+- Warn indicator: yellow dot on map pins with profit margin below 12%
+
+---
+
+### Format B — Load-Level Matching Report
+Per-load export with explicit match status. Use this when your Power BI report tracks individual load outcomes.
+
+| Column | Accepted Names |
 |---|---|
 | Office identifier | `office_id`, `branch_id`, `location_id` |
 | Office name | `office_name`, `branch_name`, `location_name` |
-| Load number | `load_id`, `load_number`, `load_#` |
-| Post date | `posted_date`, `date_posted`, `date`, `post_date` |
-| Origin city | `origin_city`, `pickup_city` |
-| Origin state | `origin_state`, `pickup_state` |
-| Destination city | `dest_city`, `destination_city`, `delivery_city` |
-| Destination state | `dest_state`, `destination_state`, `delivery_state` |
-| Equipment type | `equipment`, `equipment_type`, `equip` |
-| Match status | `match_status`, `matched`, `status` → values: `Matched`/`Unmatched` or `Yes`/`No` |
-| Carrier name | `carrier_name`, `carrier` |
-| Carrier MC# | `carrier_mc`, `mc_number` |
-| Rate | `rate`, `load_rate`, `buy_rate` → dollar amount, `$` and commas are stripped |
-| Miles | `miles`, `distance_miles`, `mileage` |
-| Customer | `customer`, `customer_name`, `shipper` |
+| Match status | `match_status`, `matched`, `status` → values: `Matched`/`Yes`/`True`/`1` or `Unmatched`/`No`/`False`/`0`; also accepts `covered`, `booked`, `awarded`, `tendered` |
+| Origin state | `origin_state`, `pickup_state`, or parsed from `Lane` column |
+| Destination state | `dest_state`, `destination_state` |
+| Rate | `rate`, `load_rate`, `buy_rate` |
+| Post date | `posted_date`, `date_posted`, `date` (format: `YYYY-MM-DD` or `MM/DD/YYYY`) |
+| Carrier name | `carrier_name`, `carrier_name_column`, `carrier` |
 
-### Minimum viable export (must have at least these)
-- `office_id` or `office_name`
-- `match_status`
-- `origin_state` + `dest_state`
+**Map display** (for this format):
+- Primary KPI: **Match Rate** (green ≥80%, yellow ≥60%, red <60%)
+- Warn indicator: yellow dot on pins with match rate below 70%
 
 ---
 
-## Example CSV
+## How to Export from Power BI
 
-```
-office_id,office_name,load_id,posted_date,origin_city,origin_state,dest_city,dest_state,equipment,match_status,carrier_name,carrier_mc,rate,miles,customer
-TX-DA201,Dallas - Smith,2401001,2026-05-01,Dallas,TX,Chicago,IL,Dry Van,Matched,ABC Transport,MC-123456,$2400,920,Acme Corp
-TX-DA201,Dallas - Smith,2401002,2026-05-01,Fort Worth,TX,Memphis,TN,Reefer,Unmatched,,,,,XYZ Foods
-IL-CH055,Chicago - Jones,2401003,2026-05-02,Chicago,IL,Detroit,MI,Flatbed,Matched,DEF Trucking,MC-789012,$1800,310,Widget Co
-```
+1. Open your load data report in Power BI
+2. Click the **...** menu on the table visual → **Export data**
+3. Choose **Summarized data** → **CSV**
+4. Save the file
+
+The API automatically detects which format you're using based on the column names present.
 
 ---
 
@@ -60,7 +72,7 @@ curl -X POST https://mode-office-locations.netlify.app/api/upload \
   --data-binary @your_export.csv
 ```
 
-### Append to existing data
+### Append to existing data (keeps history)
 ```bash
 curl -X POST "https://mode-office-locations.netlify.app/api/upload?mode=append" \
   -H "Content-Type: text/csv" \
@@ -68,63 +80,53 @@ curl -X POST "https://mode-office-locations.netlify.app/api/upload?mode=append" 
   --data-binary @your_export.csv
 ```
 
-### Upload JSON instead of CSV
+Use `replace` (default) for month-end snapshots. Use `append` for incremental weekly uploads — lane, carrier, and monthly trend data accumulates across uploads.
+
+---
+
+## Office ID Matching
+
+The `IBO` column in the Power BI export uses codes like `TX-SA217`. The map groups offices by the **numeric suffix** — so `TX-SA217` and `TX-AD217` both map to key `217`, which corresponds to the map pin whose ID contains `217`.
+
+Multi-IBO map pins (e.g., ID `512; 217; 713`) automatically aggregate stats from all matching IBO codes.
+
+---
+
+## Verify an Upload
+
 ```bash
-curl -X POST https://mode-office-locations.netlify.app/api/upload \
-  -H "Content-Type: application/json" \
-  -H "X-Upload-Secret: YOUR_SECRET" \
-  -d '[{"office_id":"TX-DA201","match_status":"Matched",...}]'
+# Check last upload timestamp and record counts
+curl https://mode-office-locations.netlify.app/api/health
+
+# View all offices (for map overlay)
+curl https://mode-office-locations.netlify.app/api/office-stats
+
+# Check a specific office by numeric IBO suffix
+curl "https://mode-office-locations.netlify.app/api/office-stats/217"
+
+# Or by the full map pin ID
+curl "https://mode-office-locations.netlify.app/api/office-stats/512%3B%20217%3B%20713"
 ```
 
 ---
 
-## Netlify Environment Variables to Set
+## Netlify Environment Variable
 
-In Netlify dashboard → Site → Environment variables:
+Set in Netlify dashboard → Site → Environment variables:
 
-| Variable | Value | Required |
-|---|---|---|
-| `UPLOAD_SECRET` | Any strong secret string | Recommended — omit to allow unauthenticated uploads |
+| Variable | Value |
+|---|---|
+| `UPLOAD_SECRET` | Any strong secret — passed as `X-Upload-Secret` header when uploading |
+
+If no secret is set, the upload endpoint is open.
 
 ---
 
-## API Responses
+## Troubleshooting
 
-### GET /api/health
-```json
-{ "ok": true, "store": "mode-iq-analytics", "meta": { "last_upload": "2026-06-03T...", "records_ingested": 450 } }
-```
-
-### GET /api/office-stats
-Returns all offices with aggregated stats:
-```json
-{
-  "offices": {
-    "TX-DA201": {
-      "office_id": "TX-DA201",
-      "office_name": "Dallas - Smith",
-      "total": 142,
-      "matched": 118,
-      "unmatched": 24,
-      "match_rate": 83,
-      "avg_rate": 2310,
-      "avg_miles": 740,
-      "top_lanes": [
-        { "orig": "TX", "dest": "IL", "count": 22 },
-        { "orig": "TX", "dest": "TN", "count": 18 }
-      ],
-      "top_carriers": [
-        { "name": "ABC Transport", "count": 14 }
-      ],
-      "monthly_trend": [
-        { "month": "2026-04", "count": 68 },
-        { "month": "2026-05", "count": 74 }
-      ],
-      "equipment": { "Dry Van": 98, "Reefer": 44 }
-    }
-  }
-}
-```
-
-### GET /api/office-stats/:office_id
-Same structure as above but for a single office.
+| Symptom | Fix |
+|---|---|
+| `401 Unauthorized` | Check your `X-Upload-Secret` matches the Netlify env var |
+| `400 No records parsed` | Verify CSV has at least an `IBO` or `office_id` column |
+| Office shows "No analytics data" | The IBO numeric suffix doesn't match the map pin ID — compare the number in the IBO code (e.g., `217` from `TX-SA217`) with the map pin's ID |
+| Profit margin seems wrong | Verify the `Profit %` column is included and has numeric values like `18.97%` |

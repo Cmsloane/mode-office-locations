@@ -413,11 +413,21 @@ async function fetchStats(o){
     if(r.status===404){panel.className='an-empty';panel.textContent='No analytics data for this office yet.';return;}
     if(!r.ok){panel.className='an-err';panel.textContent='Error loading analytics.';return;}
     const d=await r.json();
-    const rateClass=d.match_rate>=80?'good':d.match_rate>=60?'warn':'bad';
+    // Prefer profit margin when available (Power BI lane reports); fall back to match rate
+    let primaryVal,primaryLbl,primaryClass;
+    if(d.avg_profit_pct!=null){
+      primaryVal=d.avg_profit_pct+'%';
+      primaryLbl='Profit Margin';
+      primaryClass=d.avg_profit_pct>=20?'good':d.avg_profit_pct>=12?'warn':'bad';
+    }else{
+      primaryVal=d.match_rate+'%';
+      primaryLbl='Match Rate';
+      primaryClass=d.match_rate>=80?'good':d.match_rate>=60?'warn':'bad';
+    }
     let h=`<div class="an-kpis">
-      <div class="an-kpi"><span class="an-kpi-val ${rateClass}">${d.match_rate}%</span><span class="an-kpi-lbl">Match Rate</span></div>
+      <div class="an-kpi"><span class="an-kpi-val ${primaryClass}">${primaryVal}</span><span class="an-kpi-lbl">${primaryLbl}</span></div>
       <div class="an-kpi"><span class="an-kpi-val">${(d.total||0).toLocaleString()}</span><span class="an-kpi-lbl">Loads</span></div>
-      <div class="an-kpi"><span class="an-kpi-val">${d.avg_rate?'$'+(d.avg_rate).toLocaleString():'—'}</span><span class="an-kpi-lbl">Avg Rate</span></div>
+      <div class="an-kpi"><span class="an-kpi-val">${d.avg_rate?'$'+(d.avg_rate).toLocaleString():'—'}</span><span class="an-kpi-lbl">Avg Revenue</span></div>
     </div>`;
     if(d.top_lanes&&d.top_lanes.length){
       h+=`<div class="an-lanes-hdr">Top Lanes</div>`;
@@ -465,7 +475,10 @@ const gWarnDots=gLayer.append('g');
     proj2.forEach(function(pt){
       if(pt.x==null)return;
       const s=offices[pt.o.id]||offices[pt.o.n];
-      if(!s||s.match_rate>=70)return;
+      if(!s)return;
+      // warn on low profit margin (Power BI data) or low match rate (load-match data)
+      const warn=s.avg_profit_pct!=null?s.avg_profit_pct<12:s.match_rate<70;
+      if(!warn)return;
       gWarnDots.append('circle')
         .attr('class','warn-dot')
         .attr('cx',pt.x+3).attr('cy',pt.y-3)
