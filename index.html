@@ -237,7 +237,7 @@ const circles=gPts.selectAll('circle').data(proj.filter(d=>d.x!=null)).join('cir
 
 const zoom=d3.zoom().scaleExtent([1,60]).on('zoom',ev=>{
   gLayer.attr('transform',ev.transform);const k=ev.transform.k;
-  gPts.selectAll('circle').attr('r',4.2/Math.sqrt(k));
+  gPts.selectAll('circle.office').attr('r',4.2/Math.sqrt(k));
   gLab.selectAll('text').attr('font-size',(9/Math.sqrt(k))+'px');
 });
 svg.call(zoom).on('dblclick.zoom',null);
@@ -341,7 +341,7 @@ async function fetchStats(o){
     if(d.top_lanes&&d.top_lanes.length){
       h+=`<div class="an-lanes-hdr">Top Lanes</div>`;
       d.top_lanes.slice(0,5).forEach(({lane,count})=>{
-        h+=`<div class="an-lane"><span>${lane}</span><span class="an-lane-cnt">${count}</span></div>`;
+        h+=`<div class="an-lane"><span>${esc(lane)}</span><span class="an-lane-cnt">${count}</span></div>`;
       });
     }
     if(d.monthly&&d.monthly.length){
@@ -386,11 +386,10 @@ async function fetchStats(o){
       if(s.match_rate<70){
         d3.select(this.parentNode).append('circle')
           .attr('class','warn-dot')
-          .attr('cx',d.x).attr('cy',d.y)
+          .attr('cx',d.x+3).attr('cy',d.y-3)
           .attr('r',2.2).attr('fill','#facc15')
           .attr('stroke','#0e1116').attr('stroke-width','1px')
-          .style('pointer-events','none')
-          .attr('transform',`translate(4,-4)`);
+          .style('pointer-events','none');
       }
     });
   }catch(e){/* analytics unavailable — silent */}
